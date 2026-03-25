@@ -3,10 +3,21 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "tsx server.ts",
-    "dev": "tsx watch server.ts"
+    "dev": "concurrently -n api,vite -c cyan,magenta \"tsx watch server.ts\" \"vite\"",
+    "build": "vite build",
+    "start": "tsx server.ts"
   },
   "dependencies": {
-    "tsx": "^4.19.2"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
   }
 }
