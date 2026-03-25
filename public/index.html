@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Tables de multiplication</title>
+  <style>
+    /* ── Reset & base ────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-a: #4c6ef5;
+      --bg-b: #7048e8;
+      --card: #ffffff;
+      --shadow: 0 20px 60px rgba(0,0,0,.25);
+      --radius: 20px;
+      --c1: #ff6b6b;   /* coral */
+      --c2: #20c997;   /* teal  */
+      --c3: #ffd43b;   /* yellow */
+      --c4: #74c0fc;   /* sky   */
+      --ok: #40c057;
+      --err: #fa5252;
+      --text: #1a1a2e;
+      --muted: #868e96;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(145deg, var(--bg-a), var(--bg-b));
+      min-height: 100dvh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 16px 12px 32px;
+      overscroll-behavior: none;
+    }
+
+    #app { width: 100%; max-width: 460px; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── Page title ──────────────────────────────────────────── */
+    .page-title {
+      text-align: center;
+      color: #fff;
+      font-size: clamp(1.5rem, 6vw, 2rem);
+      font-weight: 800;
+      margin-bottom: 18px;
+      text-shadow: 0 2px 10px rgba(0,0,0,.2);
+      letter-spacing: -0.5px;
+    }
+
+    /* ── Card ────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      box-shadow: var(--shadow);
+    }
+
+    /* ── Buttons base ────────────────────────────────────────── */
+    button { font-family: inherit; cursor: pointer; border: none; transition: transform .1s, box-shadow .1s; }
+    button:active { transform: scale(.96); }
+
+    .btn-primary {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--bg-a), var(--bg-b));
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(76,110,245,.4);
+    }
+
+    /* ── Profile screen ──────────────────────────────────────── */
+    .profile-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+    .profile-btn {
+      padding: 16px 20px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--bg-a), var(--bg-b));
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-align: left;
+      box-shadow: 0 4px 14px rgba(76,110,245,.35);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile-btn .mastery-pill {
+      margin-left: auto;
+      font-size: 0.7rem;
+      background: rgba(255,255,255,.25);
+      padding: 3px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .divider {
+      text-align: center;
+      color: var(--muted);
+      font-size: .85rem;
+      margin: 16px 0;
+      position: relative;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 38%;
+      height: 1px;
+      background: #e9ecef;
+    }
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
+
+    .new-profile-row { display: flex; gap: 8px; }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 2px solid #e9ecef;
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s;
+      color: var(--text);
+    }
+    input[type="text"]:focus { border-color: var(--bg-a); }
+
+    .btn-go {
+      padding: 14px 20px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--bg-a), var(--bg-b));
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    /* ── Game screen ─────────────────────────────────────────── */
+    .game-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .topbar-btn {
+      background: rgba(255,255,255,.18);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: .82rem;
+      font-weight: 600;
+      backdrop-filter: blur(4px);
+    }
+
+    .profile-name {
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    /* Stats row */
+    .stats-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .stat-box {
+      flex: 1;
+      text-align: center;
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 8px 4px;
+    }
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--bg-a);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: .62rem;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* Question */
+    .question-wrap {
+      text-align: center;
+      padding: 28px 8px 20px;
+    }
+
+    .question-eq {
+      font-size: clamp(2.4rem, 12vw, 3.5rem);
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: 2px;
+      line-height: 1.1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .3em;
+      flex-wrap: wrap;
+    }
+
+    .q-blank {
+      display: inline-block;
+      min-width: 1.4em;
+      padding: .05em .2em;
+      background: #edf2ff;
+      color: var(--bg-a);
+      border-radius: .25em;
+      border-bottom: 4px solid var(--bg-a);
+    }
+
+    /* Answer grid */
+    .answer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .ans-btn {
+      padding: 0;
+      height: 70px;
+      border-radius: 16px;
+      font-size: clamp(1.5rem, 6vw, 2rem);
+      font-weight: 800;
+      color: #fff;
+      box-shadow: 0 5px 0 rgba(0,0,0,.18);
+      transition: transform .1s, box-shadow .1s, background .15s;
+    }
+
+    .ans-btn:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 rgba(0,0,0,.18);
+    }
+
+    .ans-btn:disabled { cursor: default; }
+
+    .ans-btn.color-1 { background: var(--c1); }
+    .ans-btn.color-2 { background: var(--c2); }
+    .ans-btn.color-3 { background: var(--c3); color: #1a1a2e; }
+    .ans-btn.color-4 { background: var(--c4); color: #1a1a2e; }
+
+    .ans-btn.reveal  { background: var(--ok)  !important; color: #fff !important; animation: pop .3s; }
+    .ans-btn.wrong   { background: var(--err) !important; color: #fff !important; animation: shake .35s; }
+
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-7px); }
+      60%     { transform: translateX(7px); }
+    }
+
+    /* Feedback */
+    .feedback {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      height: 34px;
+      margin-top: 10px;
+      color: transparent;
+      transition: color .2s;
+    }
+    .feedback.ok  { color: var(--ok); }
+    .feedback.err { color: var(--err); }
+
+    /* Mastery bar */
+    .mastery-bar-wrap { margin-top: 14px; }
+    .mastery-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: .72rem;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .mastery-bar {
+      height: 9px;
+      background: #e9ecef;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .mastery-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--bg-a), var(--ok));
+      border-radius: 5px;
+      transition: width .6s ease;
+      width: 0%;
+    }
+
+    /* Mode selector inside game */
+    .mode-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .mode-chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: .78rem;
+      font-weight: 600;
+      border: 2px solid #dee2e6;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .mode-chip.active {
+      border-color: var(--bg-a);
+      background: #edf2ff;
+      color: var(--bg-a);
+    }
+
+    /* ── Progress screen ─────────────────────────────────────── */
+    .prog-grid-wrap { overflow-x: auto; }
+
+    .prog-grid {
+      display: grid;
+      grid-template-columns: 22px repeat(10, 1fr);
+      gap: 3px;
+      min-width: 270px;
+    }
+
+    .pg-head {
+      font-size: .6rem;
+      font-weight: 700;
+      text-align: center;
+      color: var(--muted);
+      line-height: 22px;
+    }
+
+    .pg-cell {
+      aspect-ratio: 1;
+      border-radius: 5px;
+      transition: transform .1s;
+      cursor: default;
+      position: relative;
+    }
+    .pg-cell:hover { transform: scale(1.15); z-index: 1; }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 14px;
+    }
+    .legend-dot {
+      width: 12px; height: 12px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .prog-summary {
+      text-align: center;
+      margin: 14px 0 6px;
+      font-size: .9rem;
+      color: var(--muted);
+    }
+    .prog-summary strong { color: var(--text); }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══════════════ PROFILE SCREEN ═══════════════ -->
+  <div id="screen-profile" class="screen active">
+    <p class="page-title">🔢 Tables ×</p>
+    <div class="card">
+      <div id="profile-list" class="profile-list"></div>
+      <div class="divider">nouveau joueur</div>
+      <div class="new-profile-row">
+        <input type="text" id="new-name" placeholder="Prénom..." maxlength="20" autocomplete="off" />
+        <button class="btn-go" id="btn-go">Jouer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ GAME SCREEN ═══════════════ -->
+  <div id="screen-game" class="screen">
+    <div class="game-topbar">
+      <button class="topbar-btn" id="btn-progress">📊 Progrès</button>
+      <span class="profile-name" id="profile-badge"></span>
+      <button class="topbar-btn" id="btn-home">🏠</button>
+    </div>
+
+    <div class="card">
+      <!-- Mode chips -->
+      <div class="mode-row" id="mode-row">
+        <button class="mode-chip active" data-mode="all">Tout</button>
+        <button class="mode-chip" data-mode="weak">Difficiles 🎯</button>
+        <span id="table-chips"></span>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-value" id="stat-streak">0</div>
+          <div class="stat-label">🔥 Série</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="stat-correct">0</div>
+          <div class="stat-label">✅ Bons</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="stat-wrong">0</div>
+          <div class="stat-label">❌ Ratés</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="stat-mastery">0%</div>
+          <div class="stat-label">⭐ Maîtrise</div>
+        </div>
+      </div>
+
+      <!-- Question -->
+      <div class="question-wrap">
+        <div class="question-eq" id="question-eq"></div>
+      </div>
+
+      <!-- Answers -->
+      <div class="answer-grid" id="answer-grid"></div>
+
+      <!-- Feedback line -->
+      <div class="feedback" id="feedback"></div>
+
+      <!-- Mastery bar -->
+      <div class="mastery-bar-wrap">
+        <div class="mastery-bar-label">
+          <span>Maîtrise globale</span>
+          <span id="mastery-pct">0 / 100</span>
+        </div>
+        <div class="mastery-bar"><div class="mastery-fill" id="mastery-fill"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PROGRESS SCREEN ═══════════════ -->
+  <div id="screen-progress" class="screen">
+    <p class="page-title">📊 Progrès</p>
+    <div class="card">
+      <p class="prog-summary" id="prog-summary"></p>
+      <div class="prog-grid-wrap">
+        <div class="prog-grid" id="prog-grid"></div>
+      </div>
+      <div class="legend">
+        <span><span class="legend-dot" style="background:#40c057"></span>Maîtrisé</span>
+        <span><span class="legend-dot" style="background:#94d82d"></span>Bon</span>
+        <span><span class="legend-dot" style="background:#ffd43b"></span>À revoir</span>
+        <span><span class="legend-dot" style="background:#ff922b"></span>Difficile</span>
+        <span><span class="legend-dot" style="background:#fa5252"></span>Très difficile</span>
+        <span><span class="legend-dot" style="background:#dee2e6"></span>Nouveau</span>
+      </div>
+      <button class="btn-primary" id="btn-back" style="margin-top:18px;">← Continuer à jouer</button>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+const st = {
+  profile: '',
+  progress: {},   // 'AxB' → weight  (1.0 = new, <0.6 = mastered, >1 = needs work)
+  currentQ: null,
+  streak: 0,
+  sessionOk: 0,
+  sessionErr: 0,
+  answering: false,
+  answered: 0,
+  mode: 'all',    // 'all' | 'weak' | number (1-10 table focus)
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   SPACED REPETITION
+═══════════════════════════════════════════════════════════════ */
+function initProgress(saved) {
+  for (let a = 1; a <= 10; a++) {
+    for (let b = 1; b <= 10; b++) {
+      const k = key(a, b);
+      st.progress[k] = saved[k] ?? 1.0;
+    }
+  }
+}
+
+function key(a, b) { return `${a}x${b}`; }
+
+/** Weighted random fact selection filtered by current mode */
+function pickFact() {
+  const entries = Object.entries(st.progress).filter(([k]) => {
+    if (st.mode === 'all') return true;
+    if (st.mode === 'weak') return st.progress[k] > 1.5;
+    // table mode: one of the two factors equals the chosen table
+    const [a, b] = k.split('x').map(Number);
+    return a === st.mode || b === st.mode;
+  });
+
+  // Fallback: if filter leaves nothing, use all
+  const pool = entries.length ? entries : Object.entries(st.progress);
+
+  const total = pool.reduce((s, [, w]) => s + w, 0);
+  let r = Math.random() * total;
+  for (const [k, w] of pool) {
+    r -= w;
+    if (r <= 0) return k;
+  }
+  return pool[pool.length - 1][0];
+}
+
+function makeProductChoices(a, b) {
+  const correct = a * b;
+  const cands = new Set();
+  // distractors from same row and column — highly plausible
+  for (let j = 1; j <= 10; j++) cands.add(a * j);
+  for (let i = 1; i <= 10; i++) cands.add(i * b);
+  cands.delete(correct);
+  const pool = [...cands].sort(() => Math.random() - .5);
+  return [correct, ...pool.slice(0, 3)].sort(() => Math.random() - .5);
+}
+
+function makeFactorChoices(answer) {
+  const others = Array.from({length: 10}, (_, i) => i + 1).filter(n => n !== answer);
+  // prefer neighbors
+  others.sort((x, y) => Math.abs(x - answer) - Math.abs(y - answer));
+  const close = others.slice(0, 5).sort(() => Math.random() - .5);
+  return [answer, ...close.slice(0, 3)].sort(() => Math.random() - .5);
+}
+
+function generateQuestion() {
+  const k = pickFact();
+  const [a, b] = k.split('x').map(Number);
+  const c = a * b;
+
+  const types = ['product', 'factorA', 'factorB'];
+  const type = types[Math.floor(Math.random() * types.length)];
+
+  let parts, answer, choices;
+
+  if (type === 'product') {
+    parts = [{t:`${a}`},{t:'×'},{t:`${b}`},{t:'='},{t:'?',blank:true}];
+    answer = c;
+    choices = makeProductChoices(a, b);
+  } else if (type === 'factorA') {
+    parts = [{t:'?',blank:true},{t:'×'},{t:`${b}`},{t:'='},{t:`${c}`}];
+    answer = a;
+    choices = makeFactorChoices(a);
+  } else {
+    parts = [{t:`${a}`},{t:'×'},{t:'?',blank:true},{t:'='},{t:`${c}`}];
+    answer = b;
+    choices = makeFactorChoices(b);
+  }
+
+  st.currentQ = { k, type, parts, answer, choices };
+  return st.currentQ;
+}
+
+function recordAnswer(correct) {
+  const k = st.currentQ.k;
+  if (correct) {
+    st.progress[k] = Math.max(0.25, st.progress[k] * 0.72);
+    st.streak++;
+    st.sessionOk++;
+  } else {
+    st.progress[k] = Math.min(12, st.progress[k] * 2.4);
+    st.streak = 0;
+    st.sessionErr++;
+  }
+  st.answered++;
+  if (st.answered % 5 === 0) saveProgress();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   API
+═══════════════════════════════════════════════════════════════ */
+async function apiGet(path) {
+  try { return await (await fetch(path)).json(); } catch { return {}; }
+}
+
+async function loadProgress(profile) {
+  return apiGet(`/api/progress?profile=${encodeURIComponent(profile)}`);
+}
+
+async function loadProfiles() {
+  const arr = await apiGet('/api/profiles');
+  return Array.isArray(arr) ? arr : [];
+}
+
+async function saveProgress() {
+  if (!st.profile) return;
+  try {
+    await fetch(`/api/progress?profile=${encodeURIComponent(st.profile)}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(st.progress),
+    });
+  } catch {}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AUDIO  (Web Audio API — no CDN)
+═══════════════════════════════════════════════════════════════ */
+let _ctx = null;
+function audioCtx() {
+  return (_ctx ??= new (window.AudioContext || window.webkitAudioContext)());
+}
+
+function beep(freq, dur, delay = 0, type = 'sine', vol = 0.28) {
+  try {
+    const ctx = audioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.value = freq;
+    const t0 = ctx.currentTime + delay;
+    gain.gain.setValueAtTime(vol, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    osc.start(t0); osc.stop(t0 + dur + 0.01);
+  } catch {}
+}
+
+function playCorrect() {
+  beep(523, .12);
+  beep(659, .12, .1);
+  beep(784, .18, .2);
+}
+
+function playWrong() {
+  beep(280, .12, 0, 'square', .2);
+  beep(200, .22, .1, 'square', .18);
+}
+
+function playStreak() {
+  [523,659,784,1047,1319].forEach((f,i) => beep(f, .13, i*.09));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UI HELPERS
+═══════════════════════════════════════════════════════════════ */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${id}`).classList.add('active');
+}
+
+function masteryStats() {
+  const weights = Object.values(st.progress);
+  const mastered = weights.filter(w => w <= 0.6).length;
+  const pct = Math.round((mastered / weights.length) * 100);
+  return { mastered, total: weights.length, pct };
+}
+
+function updateStats() {
+  const streakEl = document.getElementById('stat-streak');
+  streakEl.textContent = st.streak >= 5 ? `${st.streak}🔥` : st.streak;
+  document.getElementById('stat-correct').textContent = st.sessionOk;
+  document.getElementById('stat-wrong').textContent = st.sessionErr;
+
+  const { mastered, total, pct } = masteryStats();
+  document.getElementById('stat-mastery').textContent = `${pct}%`;
+  document.getElementById('mastery-fill').style.width = `${pct}%`;
+  document.getElementById('mastery-pct').textContent = `${mastered} / ${total}`;
+}
+
+const COLORS = [
+  ['color-1', '#fff'],
+  ['color-2', '#fff'],
+  ['color-3', '#1a1a2e'],
+  ['color-4', '#1a1a2e'],
+];
+
+function renderQuestion(q) {
+  // Build equation HTML
+  const eq = document.getElementById('question-eq');
+  eq.innerHTML = q.parts.map(p =>
+    p.blank
+      ? `<span class="q-blank">?</span>`
+      : `<span>${p.t}</span>`
+  ).join('');
+
+  // Build answer buttons
+  const grid = document.getElementById('answer-grid');
+  grid.innerHTML = q.choices.map((val, i) => {
+    const [cls] = COLORS[i];
+    return `<button class="ans-btn ${cls}" data-val="${val}">${val}</button>`;
+  }).join('');
+
+  grid.querySelectorAll('.ans-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleAnswer(Number(btn.dataset.val)));
+  });
+
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  st.answering = false;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANSWER HANDLING
+═══════════════════════════════════════════════════════════════ */
+const CORRECT_MSGS = ['Super !', 'Bravo !', 'Excellent !', 'Parfait !', 'Génial !', '👍 Bien !'];
+
+function handleAnswer(val) {
+  if (st.answering) return;
+  st.answering = true;
+
+  const correct = val === st.currentQ.answer;
+  recordAnswer(correct);
+  updateStats();
+
+  // Mark buttons
+  document.querySelectorAll('.ans-btn').forEach(btn => {
+    btn.disabled = true;
+    const v = Number(btn.dataset.val);
+    if (v === st.currentQ.answer) btn.classList.add('reveal');
+    else if (v === val && !correct) btn.classList.add('wrong');
+  });
+
+  const fb = document.getElementById('feedback');
+  if (correct) {
+    if (st.streak > 0 && st.streak % 5 === 0) {
+      playStreak();
+      fb.textContent = `🎉 ${st.streak} de suite — incroyable !`;
+    } else {
+      playCorrect();
+      fb.textContent = CORRECT_MSGS[Math.floor(Math.random() * CORRECT_MSGS.length)];
+    }
+    fb.className = 'feedback ok';
+  } else {
+    playWrong();
+    fb.textContent = `La réponse était ${st.currentQ.answer}`;
+    fb.className = 'feedback err';
+  }
+
+  const delay = correct ? 750 : 1600;
+  setTimeout(() => renderQuestion(generateQuestion()), delay);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCREENS
+═══════════════════════════════════════════════════════════════ */
+async function initProfileScreen() {
+  const profiles = await loadProfiles();
+  const list = document.getElementById('profile-list');
+
+  if (profiles.length === 0) {
+    list.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.9rem;padding:8px 0">Aucun joueur encore — commence !</p>';
+    return;
+  }
+
+  // Load all progress files to show mastery %
+  const rows = await Promise.all(profiles.map(async p => {
+    const prog = await loadProgress(p);
+    const vals = Object.values(prog);
+    const pct = vals.length
+      ? Math.round(vals.filter(w => w <= 0.6).length / vals.length * 100)
+      : 0;
+    return { p, pct };
+  }));
+
+  list.innerHTML = rows.map(({p, pct}) => `
+    <button class="profile-btn" data-profile="${p}">
+      👤 ${p}
+      <span class="mastery-pill">⭐ ${pct}%</span>
+    </button>
+  `).join('');
+
+  list.querySelectorAll('.profile-btn').forEach(btn => {
+    btn.addEventListener('click', () => enterGame(btn.dataset.profile));
+  });
+}
+
+async function enterGame(name) {
+  st.profile = name;
+  st.progress = {};
+  st.streak = 0;
+  st.sessionOk = 0;
+  st.sessionErr = 0;
+  st.answered = 0;
+  st.mode = 'all';
+
+  const saved = await loadProgress(name);
+  initProgress(saved);
+
+  document.getElementById('profile-badge').textContent = `👤 ${name}`;
+  setMode('all');
+  updateStats();
+  renderQuestion(generateQuestion());
+  show('game');
+}
+
+function setMode(mode) {
+  st.mode = mode;
+  document.querySelectorAll('#mode-row .mode-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.mode == mode);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PROGRESS TABLE
+═══════════════════════════════════════════════════════════════ */
+function cellColor(w) {
+  if (w <= 0.6)  return '#40c057'; // mastered
+  if (w <= 0.9)  return '#94d82d'; // good
+  if (w <= 1.4)  return '#ffd43b'; // ok
+  if (w <= 3.0)  return '#ff922b'; // struggling
+  if (w <= 12)   return '#fa5252'; // very hard
+  return '#dee2e6'; // new / unknown
+}
+
+function renderProgressTable() {
+  const { mastered, total, pct } = masteryStats();
+
+  // hardest facts
+  const hardest = Object.entries(st.progress)
+    .filter(([, w]) => w > 1.5)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([k]) => {
+      const [a, b] = k.split('x').map(Number);
+      return `${a}×${b}=${a*b}`;
+    });
+
+  let summary = `⭐ ${mastered} / ${total} maîtrisés (${pct}%)`;
+  if (hardest.length) summary += `  ·  À travailler : ${hardest.join(', ')}`;
+  document.getElementById('prog-summary').textContent = summary;
+
+  const grid = document.getElementById('prog-grid');
+  let html = '<div></div>'; // corner
+  for (let b = 1; b <= 10; b++) html += `<div class="pg-head">${b}</div>`;
+
+  for (let a = 1; a <= 10; a++) {
+    html += `<div class="pg-head">${a}</div>`;
+    for (let b = 1; b <= 10; b++) {
+      const k = key(a, b);
+      const w = st.progress[k] ?? 1.0;
+      const col = cellColor(w);
+      const label = `${a}×${b}=${a*b}`;
+      html += `<div class="pg-cell" style="background:${col}" title="${label}"></div>`;
+    }
+  }
+  grid.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WIRING
+═══════════════════════════════════════════════════════════════ */
+document.getElementById('btn-go').addEventListener('click', () => {
+  const inp = document.getElementById('new-name');
+  const name = inp.value.trim();
+  if (!name) { inp.focus(); return; }
+  inp.value = '';
+  enterGame(name);
+});
+
+document.getElementById('new-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-go').click();
+});
+
+document.getElementById('btn-home').addEventListener('click', () => {
+  saveProgress();
+  show('profile');
+  initProfileScreen();
+});
+
+document.getElementById('btn-progress').addEventListener('click', () => {
+  renderProgressTable();
+  show('progress');
+});
+
+document.getElementById('btn-back').addEventListener('click', () => show('game'));
+
+// Table focus chips (1–10)
+const chipsEl = document.getElementById('table-chips');
+chipsEl.innerHTML = Array.from({length:10}, (_,i) => i+1)
+  .map(n => `<button class="mode-chip" data-mode="${n}">× ${n}</button>`)
+  .join('');
+
+document.getElementById('mode-row').addEventListener('click', e => {
+  const chip = e.target.closest('.mode-chip');
+  if (!chip) return;
+  const m = chip.dataset.mode;
+  setMode(isNaN(m) ? m : Number(m));
+  renderQuestion(generateQuestion());
+});
+
+// Save on page hide/unload
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveProgress();
+});
+
+// ── Boot ──
+initProfileScreen();
+</script>
+</body>
+</html>
