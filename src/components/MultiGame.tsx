@@ -7,6 +7,9 @@ import {
   applyWrong,
 } from '../lib/spacedRepetition'
 import { playCorrect, playWrong, playStreak } from '../lib/audio'
+import { xpForCorrect } from '../lib/xp'
+import { useLevelUp } from '../hooks/useLevelUp'
+import LevelUpOverlay from './LevelUpOverlay'
 import type { MultMode, MultQuestion } from '../types'
 
 const CORRECT_MSGS = ['Super !', 'Bravo !', 'Excellent !', 'Parfait !', 'Génial !', '👍 Bien !']
@@ -21,6 +24,7 @@ type BtnState = 'idle' | 'reveal' | 'wrong'
 
 export default function MultiGame() {
   const { state, dispatch, save } = useGame()
+  const [levelUp, clearLevelUp] = useLevelUp(state.xp)
 
   // Refs hold latest values for use inside setTimeout callbacks
   const progressRef = useRef(state.multProgress)
@@ -77,6 +81,7 @@ export default function MultiGame() {
       streakRef.current++
       setStreak(streakRef.current)
       setSessionOk(n => n + 1)
+      dispatch({ type: 'ADD_XP', amount: xpForCorrect(streakRef.current) })
     } else {
       streakRef.current = 0
       setStreak(0)
@@ -116,6 +121,7 @@ export default function MultiGame() {
 
   return (
     <>
+      {levelUp && <LevelUpOverlay level={levelUp} onDone={clearLevelUp} />}
       <div className="game-topbar">
         <button className="topbar-btn" onClick={() => { dispatch({ type: 'NAVIGATE', screen: 'mult-progress' }) }}>
           📊 Progrès

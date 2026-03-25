@@ -7,6 +7,9 @@ import {
   applyWrong,
 } from '../lib/spacedRepetition'
 import { playCorrect, playWrong, playStreak } from '../lib/audio'
+import { xpForCorrect } from '../lib/xp'
+import { useLevelUp } from '../hooks/useLevelUp'
+import LevelUpOverlay from './LevelUpOverlay'
 import { SENTENCES } from '../data/sentences'
 import type { ConjEnding, ConjMode } from '../types'
 
@@ -18,6 +21,7 @@ type BlankState = 'idle' | 'ok' | 'err'
 
 export default function ConjGame() {
   const { state, dispatch, save } = useGame()
+  const [levelUp, clearLevelUp] = useLevelUp(state.xp)
 
   // Refs for stale-closure safety inside setTimeout
   const conjProgressRef = useRef(state.conjProgress)
@@ -72,6 +76,7 @@ export default function ConjGame() {
       streakRef.current++
       setStreak(streakRef.current)
       setSessionOk(n => n + 1)
+      dispatch({ type: 'ADD_XP', amount: xpForCorrect(streakRef.current) })
     } else {
       streakRef.current = 0
       setStreak(0)
@@ -109,6 +114,7 @@ export default function ConjGame() {
 
   return (
     <>
+      {levelUp && <LevelUpOverlay level={levelUp} onDone={clearLevelUp} />}
       <div className="game-topbar">
         <button className="topbar-btn" onClick={() => dispatch({ type: 'NAVIGATE', screen: 'conj-progress' })}>
           📊 Progrès

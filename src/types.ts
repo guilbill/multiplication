@@ -5,6 +5,7 @@ export type Screen =
   | 'mult-progress'
   | 'conj-game'
   | 'conj-progress'
+  | 'boss-game'
 
 export type ConjEnding = 'é' | 'er' | 'ait' | 'aient'
 export type ConjMode = ConjEnding | 'all'
@@ -33,4 +34,5 @@ export interface GameState {
   profile: string
   multProgress: Record<string, number>   // 'AxB' → weight
   conjProgress: Record<number, number>   // sentence index → weight
+  xp: number
 }

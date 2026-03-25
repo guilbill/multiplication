@@ -5,6 +5,7 @@ import MultiGame from './components/MultiGame'
 import MultiProgress from './components/MultiProgress'
 import ConjGame from './components/ConjGame'
 import ConjProgress from './components/ConjProgress'
+import BossGame from './components/BossGame'
 
 export default function App() {
   const { state } = useGame()
@@ -16,6 +17,7 @@ export default function App() {
     'mult-progress':  <MultiProgress />,
     'conj-game':      <ConjGame />,
     'conj-progress':  <ConjProgress />,
+    'boss-game':      <BossGame />,
   } as const
 
   return <div id="app">{screens[state.screen]}</div>

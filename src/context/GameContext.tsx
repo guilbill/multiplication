@@ -17,10 +17,12 @@ type Action =
       profile: string
       multProgress: Record<string, number>
       conjProgress: Record<number, number>
+      xp: number
     }
   | { type: 'NAVIGATE'; screen: Screen }
   | { type: 'UPDATE_MULT'; key: string; weight: number }
   | { type: 'UPDATE_CONJ'; idx: number; weight: number }
+  | { type: 'ADD_XP'; amount: number }
 
 // ── Reducer ────────────────────────────────────────────────
 const initialState: GameState = {
@@ -28,6 +30,7 @@ const initialState: GameState = {
   profile: '',
   multProgress: {},
   conjProgress: {},
+  xp: 0,
 }
 
 function reducer(state: GameState, action: Action): GameState {
@@ -38,6 +41,7 @@ function reducer(state: GameState, action: Action): GameState {
         profile: action.profile,
         multProgress: action.multProgress,
         conjProgress: action.conjProgress,
+        xp: action.xp,
       }
     case 'NAVIGATE':
       return { ...state, screen: action.screen }
@@ -45,6 +49,8 @@ function reducer(state: GameState, action: Action): GameState {
       return { ...state, multProgress: { ...state.multProgress, [action.key]: action.weight } }
     case 'UPDATE_CONJ':
       return { ...state, conjProgress: { ...state.conjProgress, [action.idx]: action.weight } }
+    case 'ADD_XP':
+      return { ...state, xp: state.xp + action.amount }
   }
 }
 
@@ -66,8 +72,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   useEffect(() => { stateRef.current = state }, [state])
 
   const save = useCallback(() => {
-    const { profile, multProgress, conjProgress } = stateRef.current
-    if (profile) saveProgress(profile, multProgress, conjProgress)
+    const { profile, multProgress, conjProgress, xp } = stateRef.current
+    if (profile) saveProgress(profile, multProgress, conjProgress, xp)
   }, [])
 
   // Auto-save on tab hide

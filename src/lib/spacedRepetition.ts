@@ -45,7 +45,7 @@ export function pickFact(progress: Record<string, number>, mode: MultMode): stri
   return weightedPick(filtered.length ? filtered : all)
 }
 
-function makeProductChoices(a: number, b: number): number[] {
+export function makeProductChoices(a: number, b: number): number[] {
   const correct = a * b
   const cands = new Set<number>()
   for (let j = 1; j <= 10; j++) cands.add(a * j)
@@ -115,6 +115,22 @@ export function pickSentence(progress: Record<number, number>, mode: ConjMode): 
   const all = Object.entries(progress).map(([k, w]) => [+k, w] as [number, number])
   const filtered = all.filter(([idx]) => mode === 'all' || SENTENCES[idx].ans === mode)
   return weightedPick(filtered.length ? filtered : all)
+}
+
+export function bossQuestions(progress: Record<string, number>, count = 10): MultQuestion[] {
+  const sorted = Object.entries(progress)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, count)
+    .sort(() => Math.random() - 0.5)  // shuffle order
+  return sorted.map(([k]) => {
+    const [a, b] = k.split('x').map(Number)
+    return {
+      k,
+      parts: [{ t: `${a}` }, { t: '×' }, { t: `${b}` }, { t: '=' }, { t: '?', blank: true }],
+      answer: a * b,
+      choices: makeProductChoices(a, b),
+    }
+  })
 }
 
 export function conjMasteryStats(progress: Record<number, number>) {
