@@ -47,5 +47,9 @@ export async function saveProgress(
   multProgress: Record<string, number>,
   conjProgress: Record<number, number>,
 ): Promise<void> {
-  localStorage.setItem(PREFIX + profile, JSON.stringify({ mult: multProgress, conj: conjProgress }))
+  try {
+    localStorage.setItem(PREFIX + profile, JSON.stringify({ mult: multProgress, conj: conjProgress }))
+  } catch {
+    // Storage full or private browsing — progress not saved this time
+  }
 }
