@@ -16,6 +16,7 @@ const CORRECT_MSGS = ['Super !', 'Bravo !', 'Excellent !', 'Parfait !', 'Génial
 const COLORS = ['color-1', 'color-2', 'color-3', 'color-4']
 const MULT_MODES: { label: string; value: MultMode }[] = [
   { label: 'Tout', value: 'all' },
+  { label: 'Sans faciles 💪', value: 'skip-easy' },
   { label: 'Difficiles 🎯', value: 'weak' },
   ...Array.from({ length: 10 }, (_, i) => ({ label: `× ${i + 1}`, value: i + 1 })),
 ]

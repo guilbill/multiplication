@@ -1,28 +1,42 @@
 import { useState, useRef, useEffect } from 'react'
 import { useGame } from '../context/GameContext'
-import { bossQuestions } from '../lib/spacedRepetition'
+import { bossQuestions, bossConjQuestions } from '../lib/spacedRepetition'
 import { playCorrect, playWrong } from '../lib/audio'
 import { xpForCorrect } from '../lib/xp'
 import { useLevelUp } from '../hooks/useLevelUp'
 import LevelUpOverlay from './LevelUpOverlay'
+import type { ConjEnding, MultQuestion, Sentence } from '../types'
 
 const BOSS_HP      = 10
-const PLAYER_HP    = 5
-const QUESTION_SEC = 5
+const PLAYER_HP    = 3   // was 5 — can only fail twice
+const QUESTION_SEC = 4   // was 5 — tighter timer
+
+const ENDINGS: ConjEnding[] = ['é', 'er', 'ait', 'aient']
+
+type BossQ =
+  | { kind: 'mult'; question: MultQuestion }
+  | { kind: 'conj'; sentence: Sentence; answer: ConjEnding }
 
 export default function BossGame() {
   const { state, dispatch, save } = useGame()
-  const [questions]  = useState(() => bossQuestions(state.multProgress))
+
+  const [questions] = useState<BossQ[]>(() => {
+    const multQs: BossQ[] = bossQuestions(state.multProgress, 6)
+      .map(q => ({ kind: 'mult', question: q }))
+    const conjQs: BossQ[] = bossConjQuestions(state.conjProgress, 6)
+      .map(s => ({ kind: 'conj', sentence: s, answer: s.ans }))
+    return [...multQs, ...conjQs].sort(() => Math.random() - 0.5)
+  })
 
   // ── Render state ───────────────────────────────────────────
-  const [qIdx,       setQIdx]       = useState(0)
-  const [bossHp,     setBossHp]     = useState(BOSS_HP)
-  const [playerHp,   setPlayerHp]   = useState(PLAYER_HP)
-  const [timer,      setTimer]      = useState(QUESTION_SEC)
-  const [answering,  setAnswering]  = useState(false)
-  const [phase,      setPhase]      = useState<'playing' | 'won' | 'lost'>('playing')
-  const [xpEarned,   setXpEarned]   = useState(0)
-  const [hitEffect,  setHitEffect]  = useState<'boss' | 'player' | null>(null)
+  const [qIdx,      setQIdx]      = useState(0)
+  const [bossHp,    setBossHp]    = useState(BOSS_HP)
+  const [playerHp,  setPlayerHp]  = useState(PLAYER_HP)
+  const [timer,     setTimer]     = useState(QUESTION_SEC)
+  const [answering, setAnswering] = useState(false)
+  const [phase,     setPhase]     = useState<'playing' | 'won' | 'lost'>('playing')
+  const [xpEarned,  setXpEarned]  = useState(0)
+  const [hitEffect, setHitEffect] = useState<'boss' | 'player' | null>(null)
 
   // ── Refs for stale-closure safety ─────────────────────────
   const bossHpRef    = useRef(BOSS_HP)
@@ -53,9 +67,9 @@ export default function BossGame() {
     const nextIdx = qIdxRef.current + 1
     qIdxRef.current = nextIdx
 
-    if (newBossHp <= 0)                  { setPhase('won');  save(); return }
-    if (newPlayerHp <= 0)                { setPhase('lost'); save(); return }
-    if (nextIdx >= questions.length)     { setPhase(newBossHp < BOSS_HP ? 'won' : 'lost'); save(); return }
+    if (newBossHp <= 0)              { setPhase('won');  save(); return }
+    if (newPlayerHp <= 0)            { setPhase('lost'); save(); return }
+    if (nextIdx >= questions.length) { setPhase(newBossHp < BOSS_HP ? 'won' : 'lost'); save(); return }
 
     setQIdx(nextIdx)
     answeringRef.current = false
@@ -79,9 +93,14 @@ export default function BossGame() {
     }, 900)
   }
 
-  function handleAnswer(val: number) {
+  function handleAnswer(val: number | ConjEnding) {
     if (answeringRef.current || phase !== 'playing') return
-    if (val !== questions[qIdxRef.current].answer) { handleWrong(); return }
+    const q = questions[qIdxRef.current]
+    const correct = q.kind === 'mult'
+      ? val === q.question.answer
+      : val === q.answer
+
+    if (!correct) { handleWrong(); return }
 
     answeringRef.current = true
     streakRef.current++
@@ -161,35 +180,62 @@ export default function BossGame() {
         {/* Timer bar */}
         <div className="boss-timer-wrap">
           <div
-            className={`boss-timer-bar${timer <= 2 ? ' urgent' : ''}`}
+            className={`boss-timer-bar${timer <= 1 ? ' urgent' : ''}`}
             style={{ width: `${timerPct}%` }}
           />
         </div>
 
-        {/* Question */}
-        <div className="question-wrap">
-          <div className="question-eq">
-            {q.parts.map((p, i) =>
-              p.blank
-                ? <span key={i} className="q-blank">?</span>
-                : <span key={i}>{p.t}</span>
-            )}
-          </div>
+        {/* Question type badge + question */}
+        <div className="boss-q-badge">
+          {q.kind === 'mult' ? '📐 Tables' : '📝 Conjugaison'}
         </div>
 
+        {q.kind === 'mult' ? (
+          <div className="question-wrap">
+            <div className="question-eq">
+              {q.question.parts.map((p, i) =>
+                p.blank
+                  ? <span key={i} className="q-blank">?</span>
+                  : <span key={i}>{p.t}</span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="sentence-wrap">
+            <span>{q.sentence.b}</span>
+            <span className="sent-blank">___</span>
+            <span>{q.sentence.a}</span>
+          </div>
+        )}
+
         {/* Answer buttons */}
-        <div className="answer-grid">
-          {q.choices.map((c, i) => (
-            <button
-              key={c}
-              className={`ans-btn color-${(i % 4) + 1}`}
-              disabled={answering}
-              onClick={() => handleAnswer(c)}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+        {q.kind === 'mult' ? (
+          <div className="answer-grid">
+            {q.question.choices.map((c, i) => (
+              <button
+                key={c}
+                className={`ans-btn color-${(i % 4) + 1}`}
+                disabled={answering}
+                onClick={() => handleAnswer(c)}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="answer-grid">
+            {ENDINGS.map((e, i) => (
+              <button
+                key={e}
+                className={`ans-btn color-${i + 1}`}
+                disabled={answering}
+                onClick={() => handleAnswer(e)}
+              >
+                …{e}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="boss-progress-note">
           Question {qIdx + 1} / {questions.length}

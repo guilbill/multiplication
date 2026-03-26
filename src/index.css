@@ -435,6 +435,18 @@ input[type="text"]:focus { border-color: var(--bg-a); }
 .boss-timer-bar { height: 100%; background: var(--ok); border-radius: 3px; transition: width 1s linear, background .3s; }
 .boss-timer-bar.urgent { background: var(--err); }
 
+.boss-q-badge {
+  text-align: center;
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: #f1f3f5;
+  border-radius: 20px;
+  padding: 3px 12px;
+  display: inline-block;
+  margin: 6px auto 0;
+  width: 100%;
+}
 .boss-progress-note { text-align: center; font-size: .75rem; color: var(--muted); margin-top: 10px; }
 
 /* ── Boss result ─────────────────────────────────────────── */

@@ -1,5 +1,5 @@
 import { SENTENCES } from '../data/sentences'
-import type { MultMode, ConjMode, MultQuestion } from '../types'
+import type { MultMode, ConjMode, MultQuestion, Sentence } from '../types'
 
 // ── Weights ────────────────────────────────────────────────
 export const WEIGHT_CORRECT = 0.72
@@ -34,11 +34,17 @@ function weightedPick<T>(pool: [T, number][]): T {
   return pool[pool.length - 1][0]
 }
 
+const EASY_TABLES = new Set([1, 2, 5, 10])
+
 export function pickFact(progress: Record<string, number>, mode: MultMode): string {
   const all = Object.entries(progress) as [string, number][]
   const filtered = all.filter(([k]) => {
     if (mode === 'all') return true
     if (mode === 'weak') return progress[k] > 1.5
+    if (mode === 'skip-easy') {
+      const [a, b] = k.split('x').map(Number)
+      return !EASY_TABLES.has(a) && !EASY_TABLES.has(b)
+    }
     const [a, b] = k.split('x').map(Number)
     return a === mode || b === mode
   })
@@ -115,6 +121,14 @@ export function pickSentence(progress: Record<number, number>, mode: ConjMode): 
   const all = Object.entries(progress).map(([k, w]) => [+k, w] as [number, number])
   const filtered = all.filter(([idx]) => mode === 'all' || SENTENCES[idx].ans === mode)
   return weightedPick(filtered.length ? filtered : all)
+}
+
+export function bossConjQuestions(progress: Record<number, number>, count = 6): Sentence[] {
+  const sorted = Object.entries(progress)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, count)
+    .sort(() => Math.random() - 0.5)
+  return sorted.map(([k]) => SENTENCES[+k])
 }
 
 export function bossQuestions(progress: Record<string, number>, count = 10): MultQuestion[] {

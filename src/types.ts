@@ -9,7 +9,7 @@ export type Screen =
 
 export type ConjEnding = 'é' | 'er' | 'ait' | 'aient'
 export type ConjMode = ConjEnding | 'all'
-export type MultMode = 'all' | 'weak' | number
+export type MultMode = 'all' | 'weak' | 'skip-easy' | number
 
 export interface Sentence {
   b: string       // text before the blank
