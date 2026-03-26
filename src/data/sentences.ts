@@ -53,4 +53,32 @@ export const SENTENCES: Sentence[] = [
   { b: 'Elles arriv',               a: ' toujours ensemble.',       ans: 'aient' },
   { b: 'Ils cherch',                a: ' une solution.',            ans: 'aient' },
   { b: 'Elles pleur',               a: ' de joie.',                 ans: 'aient' },
+  // ── é  — groupe sujet nominal ────────────────────────────
+  { b: 'Le chat a mang',            a: ' sa pâtée.',                ans: 'é' },
+  { b: 'Ma sœur a chant',           a: ' cette chanson.',           ans: 'é' },
+  { b: 'Le facteur est arriv',      a: ' en avance.',               ans: 'é' },
+  { b: 'Mon frère a jou',           a: ' au parc.',                 ans: 'é' },
+  { b: 'La maîtresse a parl',       a: ' longtemps.',               ans: 'é' },
+  { b: 'Le bébé a pleur',           a: ' toute la nuit.',           ans: 'é' },
+  // ── er  — groupe sujet nominal ────────────────────────────
+  { b: 'Mon chien aime jou',        a: ' dehors.',                  ans: 'er' },
+  { b: 'Ma sœur veut chant',        a: ' dans un groupe.',          ans: 'er' },
+  { b: 'Le bébé apprend à march',   a: '.',                         ans: 'er' },
+  { b: 'Mon père doit travaill',    a: ' ce week-end.',             ans: 'er' },
+  { b: 'Le maître essaie d\'expliqu', a: ' la règle.',              ans: 'er' },
+  { b: 'Mon cousin aime dessin',    a: ' des personnages.',         ans: 'er' },
+  // ── ait  — groupe sujet nominal ──────────────────────────
+  { b: 'Le chat mang',              a: ' ses croquettes le soir.',  ans: 'ait' },
+  { b: 'La petite fille pleur',     a: ' souvent.',                 ans: 'ait' },
+  { b: 'Mon frère jou',             a: ' dans le jardin avant.',    ans: 'ait' },
+  { b: 'Le professeur parl',        a: ' très doucement.',          ans: 'ait' },
+  { b: 'La voisine chant',          a: ' chaque matin.',            ans: 'ait' },
+  { b: 'Le bébé regard',            a: ' les oiseaux.',             ans: 'ait' },
+  // ── aient — groupe sujet nominal ─────────────────────────
+  { b: 'Les chiens mang',           a: ' leurs croquettes.',        ans: 'aient' },
+  { b: 'Mes amis jou',              a: ' dans la rue.',             ans: 'aient' },
+  { b: 'Les filles dans',           a: ' ensemble.',                ans: 'aient' },
+  { b: 'Les élèves travaill',       a: ' en silence.',              ans: 'aient' },
+  { b: 'Les voisins parl',          a: ' fort le soir.',            ans: 'aient' },
+  { b: 'Les enfants cherch',        a: ' leurs jouets.',            ans: 'aient' },
 ]
