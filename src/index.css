@@ -272,13 +272,23 @@ input[type="text"]:focus { border-color: var(--bg-a); }
   text-align: center;
   font-size: 1.05rem;
   font-weight: 700;
-  height: 34px;
+  min-height: 34px;
   margin-top: 10px;
   color: transparent;
   transition: color .2s;
 }
 .feedback.ok  { color: var(--ok); }
 .feedback.err { color: var(--err); }
+.feedback-explain {
+  font-size: .82rem;
+  font-weight: 500;
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,.06);
+  border-radius: 8px;
+  line-height: 1.45;
+  color: inherit;
+}
 
 /* ── Mastery bar ─────────────────────────────────────────── */
 .mastery-bar-wrap { margin-top: 14px; }

@@ -17,6 +17,13 @@ const CORRECT_MSGS = ['Super !', 'Bravo !', 'Excellent !', 'Parfait !', 'Génial
 const ENDINGS: ConjEnding[] = ['é', 'er', 'ait', 'aient']
 const BTN_COLORS = ['color-1', 'color-2', 'color-3', 'color-4']
 
+const RULE_EXPLAIN: Record<ConjEnding, string> = {
+  'é':      'Après « avoir » ou « être », on écrit …\u00e9 (participe passé). \u00c9cris « vendu » → tu peux écrire « mang\u00e9 ».',
+  'er':     'Après un verbe (veut, peut, aime…), on écrit …er (infinitif). \u00c9cris « vendre » → tu peux écrire « manger ».',
+  'ait':    'Pour il / elle / on à l\u2019imparfait, on écrit …ait. \u00c9cris « vendait » → tu peux écrire « mangeait ».',
+  'aient':  'Pour ils / elles à l\u2019imparfait, on écrit …aient. \u00c9cris « vendaient » → tu peux écrire « mangeaient ».',
+}
+
 type BlankState = 'idle' | 'ok' | 'err'
 
 export default function ConjGame() {
@@ -40,7 +47,7 @@ export default function ConjGame() {
   const [sessionErr, setSessionErr] = useState(0)
   const [answering, setAnswering] = useState(false)
   const [blank, setBlank] = useState<{ text: string; state: BlankState }>({ text: '___', state: 'idle' })
-  const [feedback, setFeedback] = useState<{ msg: string; ok: boolean } | null>(null)
+  const [feedback, setFeedback] = useState<{ msg: string; ok: boolean; explain?: string } | null>(null)
   const [tipOpen, setTipOpen] = useState(false)
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
@@ -100,13 +107,17 @@ export default function ConjGame() {
       }
     } else {
       playWrong()
-      setFeedback({ msg: `C'était : « ${sentence.b}${sentence.ans}${sentence.a} »`, ok: false })
+      setFeedback({
+        msg: `C'était : « ${sentence.b}${sentence.ans}${sentence.a} »`,
+        ok: false,
+        explain: RULE_EXPLAIN[sentence.ans],
+      })
     }
 
     answerCountRef.current++
     if (answerCountRef.current % 5 === 0) save()
 
-    timerRef.current = setTimeout(() => loadNext(), correct ? 800 : 2200)
+    timerRef.current = setTimeout(() => loadNext(), correct ? 800 : 4000)
   }
 
   const sentence = SENTENCES[sentIdx]
@@ -209,6 +220,9 @@ export default function ConjGame() {
 
         <div className={`feedback${feedback ? (feedback.ok ? ' ok' : ' err') : ''}`}>
           {feedback?.msg ?? ''}
+          {feedback?.explain && (
+            <div className="feedback-explain">{feedback.explain}</div>
+          )}
         </div>
 
         {/* Mastery bar */}
