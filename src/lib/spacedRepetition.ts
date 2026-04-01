@@ -1,5 +1,6 @@
 import { SENTENCES } from '../data/sentences'
-import type { MultMode, ConjMode, MultQuestion, Sentence } from '../types'
+import { VERB_SENTENCES } from '../data/verbConjugations'
+import type { MultMode, ConjMode, VerbConjMode, MultQuestion, Sentence } from '../types'
 
 // ── Weights ────────────────────────────────────────────────
 export const WEIGHT_CORRECT = 0.72
@@ -150,6 +151,27 @@ export function bossQuestions(progress: Record<string, number>, count = 10): Mul
 export function conjMasteryStats(progress: Record<number, number>) {
   const vals = Object.values(progress)
   if (!vals.length) return { mastered: 0, total: SENTENCES.length, pct: 0 }
+  const mastered = vals.filter(w => w <= MASTERED_THRESHOLD).length
+  return { mastered, total: vals.length, pct: Math.round((mastered / vals.length) * 100) }
+}
+
+// ── Verb Conjugation ──────────────────────────────────────────
+export function initVerbConjProgress(saved: Record<number, number>): Record<number, number> {
+  const p: Record<number, number> = {}
+  for (let i = 0; i < VERB_SENTENCES.length; i++)
+    p[i] = saved[i] ?? 1.0
+  return p
+}
+
+export function pickVerbSentence(progress: Record<number, number>, mode: VerbConjMode): number {
+  const all = Object.entries(progress).map(([k, w]) => [+k, w] as [number, number])
+  const filtered = all.filter(([idx]) => mode === 'all' || VERB_SENTENCES[idx].tense === mode)
+  return weightedPick(filtered.length ? filtered : all)
+}
+
+export function verbConjMasteryStats(progress: Record<number, number>) {
+  const vals = Object.values(progress)
+  if (!vals.length) return { mastered: 0, total: VERB_SENTENCES.length, pct: 0 }
   const mastered = vals.filter(w => w <= MASTERED_THRESHOLD).length
   return { mastered, total: vals.length, pct: Math.round((mastered / vals.length) * 100) }
 }

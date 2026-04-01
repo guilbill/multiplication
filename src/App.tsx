@@ -5,6 +5,7 @@ import MultiGame from './components/MultiGame'
 import MultiProgress from './components/MultiProgress'
 import ConjGame from './components/ConjGame'
 import ConjProgress from './components/ConjProgress'
+import VerbConjGame from './components/VerbConjGame'
 import BossGame from './components/BossGame'
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
     'mult-progress':  <MultiProgress />,
     'conj-game':      <ConjGame />,
     'conj-progress':  <ConjProgress />,
+    'verb-conj-game': <VerbConjGame />,
     'boss-game':      <BossGame />,
   } as const
 

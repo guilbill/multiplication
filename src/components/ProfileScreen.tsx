@@ -24,8 +24,8 @@ export default function ProfileScreen() {
   }, [])
 
   async function selectProfile(name: string) {
-    const { multProgress, conjProgress, xp } = await loadProgress(name)
-    dispatch({ type: 'LOAD_PLAYER', profile: name, multProgress, conjProgress, xp })
+    const { multProgress, conjProgress, verbConjProgress, xp } = await loadProgress(name)
+    dispatch({ type: 'LOAD_PLAYER', profile: name, multProgress, conjProgress, verbConjProgress, xp })
     dispatch({ type: 'NAVIGATE', screen: 'subject' })
   }
 

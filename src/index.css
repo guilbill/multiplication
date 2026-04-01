@@ -524,3 +524,48 @@ input[type="text"]:focus { border-color: var(--bg-a); }
   100% { transform: scale(1)  rotate(0);    opacity: 1; }
 }
 @keyframes lu-spin { from { transform: rotate(-30deg) scale(0); } to { transform: rotate(0) scale(1); } }
+
+/* ── Verb conjugation game ─────────────────────────────────── */
+.verb-tense-badge {
+  text-align: center;
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: #f1f3f5;
+  border-radius: 20px;
+  padding: 5px 14px;
+  margin-bottom: 10px;
+}
+
+/* ── Conjugation table (shown on error) ────────────────────── */
+.conj-table-wrap {
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: #f8f9ff;
+  border-radius: 12px;
+  border: 1px solid #e0e7ff;
+}
+.conj-table-title {
+  font-size: .85rem;
+  font-weight: 800;
+  color: var(--bg-a);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.conj-table {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+}
+.conj-table-col { display: flex; flex-direction: column; gap: 3px; }
+.conj-table-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 8px;
+  background: #fff;
+  border-radius: 8px;
+  font-size: .82rem;
+}
+.conj-subj { color: var(--muted); font-weight: 600; min-width: 70px; }
+.conj-form { font-weight: 800; color: var(--text); }
