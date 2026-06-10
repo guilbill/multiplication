@@ -1,5 +1,5 @@
 import { useGame } from '../context/GameContext'
-import { multMasteryStats, conjMasteryStats, verbConjMasteryStats } from '../lib/spacedRepetition'
+import { multMasteryStats, conjMasteryStats, verbConjMasteryStats, homophoneMasteryStats } from '../lib/spacedRepetition'
 import { levelProgress, levelIcon } from '../lib/xp'
 
 export default function SubjectScreen() {
@@ -7,6 +7,7 @@ export default function SubjectScreen() {
   const { pct: multPct } = multMasteryStats(state.multProgress)
   const { pct: conjPct } = conjMasteryStats(state.conjProgress)
   const { pct: verbConjPct } = verbConjMasteryStats(state.verbConjProgress)
+  const { pct: homophonePct } = homophoneMasteryStats(state.homophoneProgress)
   const { level, current, needed, pct: xpPct } = levelProgress(state.xp)
 
   function goHome() {
@@ -64,6 +65,18 @@ export default function SubjectScreen() {
             <span className="subject-sub">présent · imparfait</span>
           </span>
           <span className="subject-pct">⭐ {verbConjPct}%</span>
+        </button>
+
+        <button
+          className="subject-card conj"
+          onClick={() => dispatch({ type: 'NAVIGATE', screen: 'homophone-game' })}
+        >
+          <span className="subject-icon">🔤</span>
+          <span className="subject-info">
+            <span className="subject-label">Homophones — on / ont</span>
+            <span className="subject-sub">il · avaient</span>
+          </span>
+          <span className="subject-pct">⭐ {homophonePct}%</span>
         </button>
 
         <button

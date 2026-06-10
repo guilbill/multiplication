@@ -18,12 +18,14 @@ type Action =
       multProgress: Record<string, number>
       conjProgress: Record<number, number>
       verbConjProgress: Record<number, number>
+      homophoneProgress: Record<number, number>
       xp: number
     }
   | { type: 'NAVIGATE'; screen: Screen }
   | { type: 'UPDATE_MULT'; key: string; weight: number }
   | { type: 'UPDATE_CONJ'; idx: number; weight: number }
   | { type: 'UPDATE_VERB_CONJ'; idx: number; weight: number }
+  | { type: 'UPDATE_HOMOPHONE'; idx: number; weight: number }
   | { type: 'ADD_XP'; amount: number }
 
 // ── Reducer ────────────────────────────────────────────────
@@ -33,6 +35,7 @@ const initialState: GameState = {
   multProgress: {},
   conjProgress: {},
   verbConjProgress: {},
+  homophoneProgress: {},
   xp: 0,
 }
 
@@ -45,6 +48,7 @@ function reducer(state: GameState, action: Action): GameState {
         multProgress: action.multProgress,
         conjProgress: action.conjProgress,
         verbConjProgress: action.verbConjProgress,
+        homophoneProgress: action.homophoneProgress,
         xp: action.xp,
       }
     case 'NAVIGATE':
@@ -55,6 +59,8 @@ function reducer(state: GameState, action: Action): GameState {
       return { ...state, conjProgress: { ...state.conjProgress, [action.idx]: action.weight } }
     case 'UPDATE_VERB_CONJ':
       return { ...state, verbConjProgress: { ...state.verbConjProgress, [action.idx]: action.weight } }
+    case 'UPDATE_HOMOPHONE':
+      return { ...state, homophoneProgress: { ...state.homophoneProgress, [action.idx]: action.weight } }
     case 'ADD_XP':
       return { ...state, xp: state.xp + action.amount }
   }
@@ -78,8 +84,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   useEffect(() => { stateRef.current = state }, [state])
 
   const save = useCallback(() => {
-    const { profile, multProgress, conjProgress, verbConjProgress, xp } = stateRef.current
-    if (profile) saveProgress(profile, multProgress, conjProgress, verbConjProgress, xp)
+    const { profile, multProgress, conjProgress, verbConjProgress, homophoneProgress, xp } = stateRef.current
+    if (profile) saveProgress(profile, multProgress, conjProgress, verbConjProgress, homophoneProgress, xp)
   }, [])
 
   // Auto-save on tab hide

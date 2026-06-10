@@ -1,6 +1,7 @@
 import { SENTENCES } from '../data/sentences'
 import { VERB_SENTENCES } from '../data/verbConjugations'
-import type { MultMode, ConjMode, VerbConjMode, MultQuestion, Sentence } from '../types'
+import { HOMOPHONE_SENTENCES } from '../data/homophones'
+import type { MultMode, ConjMode, VerbConjMode, HomophoneMode, MultQuestion, Sentence } from '../types'
 
 // ── Weights ────────────────────────────────────────────────
 export const WEIGHT_CORRECT = 0.72
@@ -172,6 +173,27 @@ export function pickVerbSentence(progress: Record<number, number>, mode: VerbCon
 export function verbConjMasteryStats(progress: Record<number, number>) {
   const vals = Object.values(progress)
   if (!vals.length) return { mastered: 0, total: VERB_SENTENCES.length, pct: 0 }
+  const mastered = vals.filter(w => w <= MASTERED_THRESHOLD).length
+  return { mastered, total: vals.length, pct: Math.round((mastered / vals.length) * 100) }
+}
+
+// ── Homophones (on / ont) ─────────────────────────────────────
+export function initHomophoneProgress(saved: Record<number, number>): Record<number, number> {
+  const p: Record<number, number> = {}
+  for (let i = 0; i < HOMOPHONE_SENTENCES.length; i++)
+    p[i] = saved[i] ?? 1.0
+  return p
+}
+
+export function pickHomophoneSentence(progress: Record<number, number>, mode: HomophoneMode): number {
+  const all = Object.entries(progress).map(([k, w]) => [+k, w] as [number, number])
+  const filtered = all.filter(([idx]) => mode === 'all' || HOMOPHONE_SENTENCES[idx].ans === mode)
+  return weightedPick(filtered.length ? filtered : all)
+}
+
+export function homophoneMasteryStats(progress: Record<number, number>) {
+  const vals = Object.values(progress)
+  if (!vals.length) return { mastered: 0, total: HOMOPHONE_SENTENCES.length, pct: 0 }
   const mastered = vals.filter(w => w <= MASTERED_THRESHOLD).length
   return { mastered, total: vals.length, pct: Math.round((mastered / vals.length) * 100) }
 }

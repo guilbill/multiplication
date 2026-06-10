@@ -6,6 +6,7 @@ export type Screen =
   | 'conj-game'
   | 'conj-progress'
   | 'verb-conj-game'
+  | 'homophone-game'
   | 'boss-game'
 
 export type ConjEnding = 'é' | 'er' | 'ait' | 'aient'
@@ -13,6 +14,8 @@ export type ConjMode = ConjEnding | 'all'
 export type MultMode = 'all' | 'weak' | 'skip-easy' | number
 export type VerbTense = 'présent' | 'imparfait'
 export type VerbConjMode = VerbTense | 'all'
+export type HomophoneAnswer = 'on' | 'ont'
+export type HomophoneMode = HomophoneAnswer | 'all'
 
 export interface Sentence {
   b: string       // text before the blank
@@ -26,6 +29,12 @@ export interface VerbConjSentence {
   verb: string    // infinitive
   tense: VerbTense
   ans: string     // correct conjugated form
+}
+
+export interface HomophoneSentence {
+  b: string       // text before the blank
+  a: string       // text after the blank
+  ans: HomophoneAnswer
 }
 
 export interface MultPart {
@@ -46,5 +55,6 @@ export interface GameState {
   multProgress: Record<string, number>   // 'AxB' → weight
   conjProgress: Record<number, number>   // sentence index → weight
   verbConjProgress: Record<number, number> // verb-conj sentence index → weight
+  homophoneProgress: Record<number, number> // on/ont sentence index → weight
   xp: number
 }
