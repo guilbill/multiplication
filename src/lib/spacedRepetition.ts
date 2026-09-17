@@ -1,6 +1,7 @@
 import { SENTENCES } from '../data/sentences'
 import { VERB_SENTENCES } from '../data/verbConjugations'
 import { HOMOPHONE_SENTENCES } from '../data/homophones'
+import { VOCAB_WORDS } from '../data/vocabulary'
 import type { MultMode, ConjMode, VerbConjMode, HomophoneMode, MultQuestion, Sentence } from '../types'
 
 // ── Weights ────────────────────────────────────────────────
@@ -194,6 +195,28 @@ export function pickHomophoneSentence(progress: Record<number, number>, mode: Ho
 export function homophoneMasteryStats(progress: Record<number, number>) {
   const vals = Object.values(progress)
   if (!vals.length) return { mastered: 0, total: HOMOPHONE_SENTENCES.length, pct: 0 }
+  const mastered = vals.filter(w => w <= MASTERED_THRESHOLD).length
+  return { mastered, total: vals.length, pct: Math.round((mastered / vals.length) * 100) }
+}
+
+// ── Vocabulaire (mots à apprendre) ────────────────────────────
+export function initVocabProgress(saved: Record<number, number>): Record<number, number> {
+  const p: Record<number, number> = {}
+  for (let i = 0; i < VOCAB_WORDS.length; i++)
+    p[i] = saved[i] ?? 1.0
+  return p
+}
+
+export function pickVocabWord(progress: Record<number, number>, avoid?: number): number {
+  const all = Object.entries(progress).map(([k, w]) => [+k, w] as [number, number])
+  // Never ask the same word twice in a row — the pool is small.
+  const filtered = all.filter(([idx]) => idx !== avoid)
+  return weightedPick(filtered.length ? filtered : all)
+}
+
+export function vocabMasteryStats(progress: Record<number, number>) {
+  const vals = Object.values(progress)
+  if (!vals.length) return { mastered: 0, total: VOCAB_WORDS.length, pct: 0 }
   const mastered = vals.filter(w => w <= MASTERED_THRESHOLD).length
   return { mastered, total: vals.length, pct: Math.round((mastered / vals.length) * 100) }
 }
