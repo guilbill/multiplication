@@ -1,5 +1,5 @@
 import { useGame } from '../context/GameContext'
-import { multMasteryStats, conjMasteryStats, verbConjMasteryStats, homophoneMasteryStats } from '../lib/spacedRepetition'
+import { multMasteryStats, conjMasteryStats, verbConjMasteryStats, homophoneMasteryStats, vocabMasteryStats } from '../lib/spacedRepetition'
 import { levelProgress, levelIcon } from '../lib/xp'
 
 export default function SubjectScreen() {
@@ -8,6 +8,7 @@ export default function SubjectScreen() {
   const { pct: conjPct } = conjMasteryStats(state.conjProgress)
   const { pct: verbConjPct } = verbConjMasteryStats(state.verbConjProgress)
   const { pct: homophonePct } = homophoneMasteryStats(state.homophoneProgress)
+  const { pct: vocabPct } = vocabMasteryStats(state.vocabProgress)
   const { level, current, needed, pct: xpPct } = levelProgress(state.xp)
 
   function goHome() {
@@ -77,6 +78,18 @@ export default function SubjectScreen() {
             <span className="subject-sub">il · avaient</span>
           </span>
           <span className="subject-pct">⭐ {homophonePct}%</span>
+        </button>
+
+        <button
+          className="subject-card vocab"
+          onClick={() => dispatch({ type: 'NAVIGATE', screen: 'vocab-game' })}
+        >
+          <span className="subject-icon">📖</span>
+          <span className="subject-info">
+            <span className="subject-label">Mots à apprendre</span>
+            <span className="subject-sub">syllabes · lettres · orthographe</span>
+          </span>
+          <span className="subject-pct">⭐ {vocabPct}%</span>
         </button>
 
         <button

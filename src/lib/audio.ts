@@ -37,3 +37,19 @@ export function playWrong() {
 export function playStreak() {
   ;[523, 659, 784, 1047, 1319].forEach((f, i) => beep(f, 0.13, i * 0.09))
 }
+
+// ── Lecture du mot (synthèse vocale) ──────────────────────────
+// Optionnelle : si le navigateur n'a pas de voix française, on ne fait rien.
+export function speakWord(text: string) {
+  try {
+    const synth = window.speechSynthesis
+    if (!synth) return
+    synth.cancel()
+    const u = new SpeechSynthesisUtterance(text)
+    u.lang = 'fr-FR'
+    u.rate = 0.85
+    synth.speak(u)
+  } catch {
+    // Silently ignore if speech synthesis is unavailable
+  }
+}
