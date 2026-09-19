@@ -7,26 +7,32 @@ import {
   applyWrong,
 } from '../lib/spacedRepetition'
 import { playCorrect, playWrong, playStreak, speakWord } from '../lib/audio'
+import { recognize, sameWord } from '../lib/handwriting'
 import { xpForCorrect } from '../lib/xp'
 import { useLevelUp } from '../hooks/useLevelUp'
 import LevelUpOverlay from './LevelUpOverlay'
-import { VOCAB_WORDS, makeVocabQuestion, fullWord } from '../data/vocabulary'
-import type { VocabMode, VocabRound } from '../types'
+import WriteCanvas from './WriteCanvas'
+import { VOCAB_WORDS, fullWord } from '../data/vocabulary'
+import type { Stroke, VocabMode } from '../types'
 
 const CORRECT_MSGS = ['Super !', 'Bravo !', 'Excellent !', 'Parfait !', 'Génial !', '👍 Bien !']
-const MODES: VocabMode[] = ['all', 'syllabes', 'lettres', 'orthographe']
+const MODES: VocabMode[] = ['tracer', 'copier', 'dictee']
 const MODE_LABELS: Record<VocabMode, string> = {
-  all: 'Tout',
-  syllabes: 'Syllabes',
-  lettres: 'Lettres',
-  orthographe: 'Orthographe',
+  tracer: '✏️ Repasser',
+  copier: '👀 Copier',
+  dictee: '👂 Dictée',
+}
+const INSTRUCTIONS: Record<VocabMode, string> = {
+  tracer: 'Repasse sur le modèle',
+  copier: 'Regarde le mot, puis écris-le',
+  dictee: 'Écoute le mot et écris-le',
 }
 
-const INSTRUCTIONS: Record<VocabRound, string> = {
-  syllabes:    'Remets les syllabes dans l’ordre',
-  lettres:     'Choisis les lettres qui manquent',
-  orthographe: 'Quelle est la bonne orthographe ?',
-}
+// 'writing' → en train d'écrire · 'checking' → lecture en cours
+// 'judged'  → corrigé · 'selfcheck' → le lecteur n'a pas répondu, l'enfant compare
+type Phase = 'writing' | 'checking' | 'judged' | 'selfcheck'
+
+const CANVAS_HEIGHT = 190
 
 export default function VocabGame() {
   const { state, dispatch, save } = useGame()
@@ -34,66 +40,81 @@ export default function VocabGame() {
 
   // Refs for stale-closure safety inside setTimeout
   const progressRef = useRef(state.vocabProgress)
-  const modeRef = useRef<VocabMode>('all')
   const streakRef = useRef(0)
   const answerCountRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const revealRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const canvasBoxRef = useRef<HTMLDivElement>(null)
+  // Poids d'avant la correction — sert au rattrapage « j'avais bien écrit »
+  const prevWeightRef = useRef(1.0)
+  const prevStreakRef = useRef(0)
 
   useEffect(() => { progressRef.current = state.vocabProgress }, [state.vocabProgress])
 
   // Local UI state
-  const [mode, setMode] = useState<VocabMode>('all')
-  const [question, setQuestion] = useState(() =>
-    makeVocabQuestion(pickVocabWord(state.vocabProgress), 'all'),
-  )
-  const [built, setBuilt] = useState<number[]>([])   // indices into question.shuffled
+  const [mode, setMode] = useState<VocabMode>('tracer')
+  const [idx, setIdx] = useState(() => pickVocabWord(state.vocabProgress))
+  const [strokes, setStrokes] = useState<Stroke[]>([])
+  const [phase, setPhase] = useState<Phase>('writing')
+  const [read, setRead] = useState<string | null>(null)   // ce que le lecteur a lu
   const [streak, setStreak] = useState(0)
   const [sessionOk, setSessionOk] = useState(0)
   const [sessionErr, setSessionErr] = useState(0)
-  const [answering, setAnswering] = useState(false)
-  const [picked, setPicked] = useState<{ value: string; ok: boolean } | null>(null)
-  const [feedback, setFeedback] = useState<{ msg: string; ok: boolean; explain?: string } | null>(null)
-  const [revealed, setRevealed] = useState(false)   // wrong answer → show the right spelling
+  const [feedback, setFeedback] = useState<{ msg: string; ok: boolean } | null>(null)
+  const [peek, setPeek] = useState(false)      // coup d'œil au modèle en dictée
   const [tipOpen, setTipOpen] = useState(false)
 
-  useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    if (revealRef.current) clearTimeout(revealRef.current)
-  }, [])
+  const word = VOCAB_WORDS[idx]
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+
+  // En dictée, le mot est dit à chaque nouveau tirage
+  useEffect(() => {
+    if (mode === 'dictee' && phase === 'writing') speakWord(fullWord(word))
+  }, [idx, mode, phase, word])
 
   function changeMode(m: VocabMode) {
     setMode(m)
-    modeRef.current = m
     if (timerRef.current) clearTimeout(timerRef.current)
-    if (revealRef.current) clearTimeout(revealRef.current)
-    loadNext(m)
+    loadNext()
   }
 
-  function loadNext(m?: VocabMode) {
-    const idx = pickVocabWord(progressRef.current, question.idx)
-    setQuestion(makeVocabQuestion(idx, m ?? modeRef.current))
-    setBuilt([])
-    setPicked(null)
+  function loadNext() {
+    setIdx(pickVocabWord(progressRef.current, idx))
+    setStrokes([])
+    setPhase('writing')
+    setRead(null)
     setFeedback(null)
-    setRevealed(false)
-    setAnswering(false)
+    setPeek(false)
   }
 
-  /** Common scoring path for every round. */
-  function score(correct: boolean, wrongMsg: string) {
-    const oldW = progressRef.current[question.idx] ?? 1.0
+  function clearInk() {
+    if (phase !== 'writing') return
+    setStrokes([])
+    setPhase('writing')
+    setRead(null)
+    setFeedback(null)
+  }
+
+  function undoStroke() {
+    if (phase !== 'writing') return
+    setStrokes(s => s.slice(0, -1))
+  }
+
+  /** Enregistre le résultat : poids, série, XP, son. */
+  function score(correct: boolean) {
+    const oldW = progressRef.current[idx] ?? 1.0
+    prevWeightRef.current = oldW
+    prevStreakRef.current = streakRef.current
     const newW = correct ? applyCorrect(oldW) : applyWrong(oldW)
 
-    dispatch({ type: 'UPDATE_VOCAB', idx: question.idx, weight: newW })
-    progressRef.current = { ...progressRef.current, [question.idx]: newW }
+    dispatch({ type: 'UPDATE_VOCAB', idx, weight: newW })
+    progressRef.current = { ...progressRef.current, [idx]: newW }
 
     if (correct) {
       streakRef.current++
       setStreak(streakRef.current)
       setSessionOk(n => n + 1)
       dispatch({ type: 'ADD_XP', amount: xpForCorrect(streakRef.current) })
-
       if (streakRef.current % 5 === 0) {
         playStreak()
         setFeedback({ msg: `🎉 ${streakRef.current} de suite !`, ok: true })
@@ -101,57 +122,63 @@ export default function VocabGame() {
         playCorrect()
         setFeedback({ msg: CORRECT_MSGS[Math.floor(Math.random() * CORRECT_MSGS.length)], ok: true })
       }
-      speakWord(question.display)
+      timerRef.current = setTimeout(() => loadNext(), 1800)
     } else {
       streakRef.current = 0
       setStreak(0)
       setSessionErr(n => n + 1)
       playWrong()
-      setFeedback({
-        msg: wrongMsg,
-        ok: false,
-        explain: `On écrit : ${question.syllables.join(' · ')}`,
-      })
-      // Leave the wrong answer on screen a moment, then show the right one
-      revealRef.current = setTimeout(() => setRevealed(true), 900)
+      setFeedback({ msg: `C’était : ${word.word} — ${word.syllables.join(' · ')}`, ok: false })
+      // Pas d'enchaînement automatique : l'enfant compare son mot au modèle
     }
+    setPhase('judged')
 
     answerCountRef.current++
     if (answerCountRef.current % 5 === 0) save()
-
-    timerRef.current = setTimeout(() => loadNext(), correct ? 900 : 4000)
   }
 
-  // ── Round « syllabes » ──────────────────────────────────────
-  function tapSyllable(i: number) {
-    if (answering || built.includes(i)) return
-    const next = [...built, i]
-    setBuilt(next)
-    if (next.length < question.shuffled.length) return
+  /** Le lecteur s'est trompé, pas l'enfant : on repasse la réponse en juste. */
+  function overrideCorrect() {
+    const oldW = prevWeightRef.current
+    const newW = applyCorrect(oldW)
+    dispatch({ type: 'UPDATE_VOCAB', idx, weight: newW })
+    progressRef.current = { ...progressRef.current, [idx]: newW }
 
-    setAnswering(true)
-    const word = next.map(j => question.shuffled[j]).join('')
-    score(word === question.answer, `C’était : « ${question.display} »`)
+    // La série reprend là où l'erreur de lecture l'avait coupée
+    streakRef.current = prevStreakRef.current + 1
+    setStreak(streakRef.current)
+    setSessionErr(n => Math.max(0, n - 1))
+    setSessionOk(n => n + 1)
+    dispatch({ type: 'ADD_XP', amount: xpForCorrect(streakRef.current) })
+    playCorrect()
+    setFeedback({ msg: 'D’accord, c’était juste !', ok: true })
+    timerRef.current = setTimeout(() => loadNext(), 1500)
   }
 
-  function undoSyllable() {
-    if (answering) return
-    setBuilt(b => b.slice(0, -1))
-  }
-
-  // ── Rounds « lettres » / « orthographe » ────────────────────
-  function chooseAnswer(value: string) {
-    if (answering) return
-    setAnswering(true)
-    const correct = value === question.answer
-    setPicked({ value, ok: correct })
-    score(correct, `C’était : « ${question.display} »`)
+  async function check() {
+    if (!strokes.length || phase === 'checking') return
+    setPhase('checking')
+    const box = canvasBoxRef.current
+    try {
+      const candidates = await recognize(
+        strokes,
+        box?.clientWidth ?? 400,
+        CANVAS_HEIGHT,
+      )
+      const hit = candidates.find(c => sameWord(c, word.word))
+      setRead(candidates[0] ?? '')
+      score(Boolean(hit))
+    } catch {
+      // Moteur injoignable (hors ligne, panne) — l'enfant se corrige lui-même
+      setPhase('selfcheck')
+      setFeedback(null)
+    }
   }
 
   const { mastered, total, pct } = vocabMasteryStats(progressRef.current)
-  const builtText = built.map(i => question.shuffled[i]).join('')
-  // idle → ok (right answer, or the correction once revealed) → err
-  const answerState = !feedback ? '' : feedback.ok || revealed ? ' ok' : ' err'
+  const showModel =
+    mode === 'tracer' || mode === 'copier' || peek || phase === 'judged' || phase === 'selfcheck'
+  const writing = phase === 'writing'
 
   return (
     <>
@@ -197,99 +224,79 @@ export default function VocabGame() {
           </div>
         </div>
 
-        {/* Instruction + écoute */}
+        {/* Consigne + écoute */}
         <div className="vocab-instruction">
-          <span>{INSTRUCTIONS[question.round]}</span>
-          <button className="speak-btn" onClick={() => speakWord(question.display)} title="Écouter le mot">
+          <span>{INSTRUCTIONS[mode]}</span>
+          <button className="speak-btn" onClick={() => speakWord(fullWord(word))} title="Écouter le mot">
             🔊
           </button>
         </div>
 
-        {/* ── Syllabes ── */}
-        {question.round === 'syllabes' && (
-          <>
-            <div className="vocab-word">
-              <span className="vocab-article">{VOCAB_WORDS[question.idx].article}</span>
-              <span className={`vocab-build${answerState}`}>
-                {revealed ? question.answer : builtText || '…'}
-              </span>
-            </div>
-            <div className="syll-pool">
-              {question.shuffled.map((syll, i) => (
-                <button
-                  key={i}
-                  className={`syll-chip${built.includes(i) ? ' used' : ''}`}
-                  disabled={answering || built.includes(i)}
-                  onClick={() => tapSyllable(i)}
-                >
-                  {syll}
-                </button>
-              ))}
-            </div>
-            <div className="vocab-undo-row">
-              <button
-                className="vocab-undo"
-                disabled={answering || !built.length}
-                onClick={undoSyllable}
-              >
-                ↩ Effacer
-              </button>
-            </div>
-          </>
-        )}
+        {/* Modèle */}
+        <div className="vocab-model">
+          <span className="vocab-article">{word.article}</span>
+          <span className={`vocab-target${showModel ? '' : ' hidden'}`}>
+            {showModel ? word.word : '• '.repeat(word.word.length).trim()}
+          </span>
+        </div>
 
-        {/* ── Lettres ── */}
-        {question.round === 'lettres' && question.hole && (
-          <>
-            <div className="vocab-word">
-              <span className="vocab-article">{VOCAB_WORDS[question.idx].article}</span>
-              <span>{question.hole.before}</span>
-              <span className={`sent-blank${answerState}`}>
-                {revealed ? question.answer : picked?.value ?? '__'}
-              </span>
-              <span>{question.hole.after}</span>
-            </div>
-            <div className="answer-grid">
-              {question.choices.map((c, i) => (
-                <button
-                  key={c}
-                  className={`ans-btn color-${i + 1}${
-                    picked && c === question.answer ? ' reveal' : ''
-                  }${picked && !picked.ok && c === picked.value ? ' wrong' : ''}`}
-                  disabled={answering}
-                  onClick={() => chooseAnswer(c)}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+        {/* Ardoise */}
+        <div className="canvas-box" ref={canvasBoxRef}>
+          <WriteCanvas
+            strokes={strokes}
+            onChange={setStrokes}
+            disabled={phase !== 'writing'}
+            ghost={mode === 'tracer' ? word.word : undefined}
+            height={CANVAS_HEIGHT}
+          />
+          {read !== null && phase === 'judged' && (
+            <div className="read-badge">J’ai lu : « {read || '…'} »</div>
+          )}
+        </div>
 
-        {/* ── Orthographe ── */}
-        {question.round === 'orthographe' && (
-          <div className="answer-grid stack">
-            {question.choices.map((c, i) => (
-              <button
-                key={c}
-                className={`ans-btn word-btn color-${i + 1}${
-                  picked && c === question.answer ? ' reveal' : ''
-                }${picked && !picked.ok && c === picked.value ? ' wrong' : ''}`}
-                disabled={answering}
-                onClick={() => chooseAnswer(c)}
-              >
-                {c}
-              </button>
-            ))}
+        {/* Outils */}
+        <div className="write-tools">
+          <button className="write-tool" disabled={!writing || !strokes.length} onClick={undoStroke}>↩</button>
+          <button className="write-tool" disabled={!writing || !strokes.length} onClick={clearInk}>🗑</button>
+          {mode === 'dictee' && writing && (
+            <button className="write-tool" onClick={() => setPeek(p => !p)} title="Voir le modèle">👀</button>
+          )}
+          {writing && (
+            <button className="btn-check" disabled={!strokes.length} onClick={check}>
+              ✅ Vérifier
+            </button>
+          )}
+          {phase === 'checking' && <button className="btn-check" disabled>⏳ Je lis…</button>}
+          {phase === 'judged' && (
+            <button className="btn-check" onClick={loadNext}>Mot suivant →</button>
+          )}
+        </div>
+
+        {/* Auto-correction quand le lecteur n'a pas pu répondre */}
+        {phase === 'selfcheck' && (
+          <div className="selfcheck">
+            <p>Je n’ai pas pu lire ton mot. Compare avec le modèle :</p>
+            <div className="selfcheck-btns">
+              <button className="selfcheck-btn ok" onClick={() => score(true)}>✅ C’est pareil</button>
+              <button className="selfcheck-btn err" onClick={() => score(false)}>❌ Pas pareil</button>
+            </div>
           </div>
         )}
 
         <div className={`feedback${feedback ? (feedback.ok ? ' ok' : ' err') : ''}`}>
           {feedback?.msg ?? ''}
-          {feedback?.explain && <div className="feedback-explain">{feedback.explain}</div>}
         </div>
 
-        {/* Tip — la liste des mots de la semaine */}
+        {/* Rattrapage : le lecteur a mal lu une écriture correcte */}
+        {phase === 'judged' && feedback && !feedback.ok && (
+          <div className="tip-row">
+            <button className="tip-toggle" onClick={overrideCorrect}>
+              ✍️ J’avais bien écrit
+            </button>
+          </div>
+        )}
+
+        {/* Liste des mots */}
         <div className="tip-row">
           <button className="tip-toggle" onClick={() => setTipOpen(o => !o)}>
             💡 {tipOpen ? 'Fermer la liste' : 'Voir les mots'}

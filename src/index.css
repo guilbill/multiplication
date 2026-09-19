@@ -570,7 +570,7 @@ input[type="text"]:focus { border-color: var(--bg-a); }
 .conj-subj { color: var(--muted); font-weight: 600; min-width: 70px; }
 .conj-form { font-weight: 800; color: var(--text); }
 
-/* ── Mots à apprendre ────────────────────────────────────── */
+/* ── Mots à apprendre (écriture au stylet) ───────────────── */
 .subject-card.vocab { background: linear-gradient(135deg, #12b886, #228be6); color: #fff; }
 
 .vocab-instruction {
@@ -581,7 +581,7 @@ input[type="text"]:focus { border-color: var(--bg-a); }
   font-size: .85rem;
   font-weight: 700;
   color: var(--muted);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 .speak-btn {
   background: #edf2ff;
@@ -594,52 +594,83 @@ input[type="text"]:focus { border-color: var(--bg-a); }
 }
 .speak-btn.small { width: 26px; height: 26px; font-size: .8rem; background: #f1f3f5; }
 
-.vocab-word {
+.vocab-model {
   text-align: center;
-  font-size: clamp(1.6rem, 8vw, 2.3rem);
+  font-size: clamp(1.4rem, 7vw, 2rem);
   font-weight: 800;
   color: var(--text);
   letter-spacing: 1px;
-  padding: 22px 6px 18px;
+  padding: 6px 4px 12px;
   word-break: break-word;
+  min-height: 2.6rem;
 }
 .vocab-article { color: var(--muted); font-weight: 600; }
-.vocab-build {
-  display: inline-block;
-  min-width: 3em;
-  border-bottom: 3px solid var(--bg-a);
-  color: var(--bg-a);
-  padding: 0 6px;
-}
-.vocab-build.ok  { color: var(--ok);  border-color: var(--ok); }
-.vocab-build.err { color: var(--err); border-color: var(--err); }
+.vocab-target.hidden { color: #ced4da; letter-spacing: 4px; }
 
-.syll-pool { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-.syll-chip {
-  background: var(--c4);
-  color: #1a1a2e;
+.canvas-box { position: relative; }
+.write-canvas {
+  display: block;
+  width: 100%;
+  background: #fffef9;
+  border: 2px solid #e9ecef;
   border-radius: 14px;
-  padding: 14px 20px;
-  font-size: clamp(1.2rem, 5vw, 1.6rem);
-  font-weight: 800;
-  box-shadow: 0 5px 0 rgba(0,0,0,.18);
-  transition: transform .1s, box-shadow .1s, opacity .2s;
+  touch-action: none;          /* le stylet dessine, la page ne défile pas */
+  cursor: crosshair;
 }
-.syll-chip:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,.18); }
-.syll-chip.used { opacity: .25; box-shadow: none; cursor: default; }
-
-.vocab-undo-row { text-align: center; margin-top: 12px; }
-.vocab-undo {
-  background: #f1f3f5;
+.write-canvas.disabled { cursor: default; background: #f8f9fa; }
+.read-badge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  background: rgba(26,26,46,.78);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 600;
+  padding: 4px 10px;
   border-radius: 20px;
-  padding: 7px 18px;
-  font-size: .82rem;
-  font-weight: 700;
-  color: var(--muted);
 }
-.vocab-undo:disabled { opacity: .4; cursor: default; }
 
-.answer-grid.stack { grid-template-columns: 1fr; }
-.ans-btn.word-btn { height: 58px; font-size: clamp(1.05rem, 4.5vw, 1.4rem); letter-spacing: .5px; }
+.write-tools { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.write-tool {
+  background: #f1f3f5;
+  border-radius: 12px;
+  width: 46px;
+  height: 46px;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.write-tool:disabled { opacity: .35; cursor: default; }
+.btn-check {
+  flex: 1;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--ok);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 4px 0 rgba(0,0,0,.18);
+}
+.btn-check:disabled { background: #ced4da; box-shadow: none; cursor: default; }
+
+.selfcheck {
+  margin-top: 12px;
+  background: #fff9db;
+  border: 1px solid #ffe066;
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+}
+.selfcheck p { font-size: .85rem; color: var(--muted); font-weight: 600; margin-bottom: 10px; }
+.selfcheck-btns { display: flex; gap: 8px; }
+.selfcheck-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 800;
+  font-size: .92rem;
+}
+.selfcheck-btn.ok  { background: var(--ok); }
+.selfcheck-btn.err { background: var(--err); }
 
 .tip-word { font-weight: 800; color: var(--text); font-size: .95rem; flex: 1; }
