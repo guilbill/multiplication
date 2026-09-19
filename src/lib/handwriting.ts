@@ -18,9 +18,12 @@ export async function recognize(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ink, width, height }),
   })
-  if (!res.ok) throw new Error(`recognize: HTTP ${res.status}`)
+  if (!res.ok) {
+    // 404 → l'API n'est pas déployée · 502 → moteur injoignable
+    throw new Error(`HTTP ${res.status}`)
+  }
   const data = await res.json()
-  if (!Array.isArray(data.candidates)) throw new Error('recognize: bad answer')
+  if (!Array.isArray(data.candidates)) throw new Error('réponse inattendue')
   return data.candidates as string[]
 }
 

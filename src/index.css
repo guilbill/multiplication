@@ -661,6 +661,7 @@ input[type="text"]:focus { border-color: var(--bg-a); }
   text-align: center;
 }
 .selfcheck p { font-size: .85rem; color: var(--muted); font-weight: 600; margin-bottom: 10px; }
+.selfcheck-why { font-size: .7rem !important; opacity: .7; font-weight: 500 !important; }
 .selfcheck-btns { display: flex; gap: 8px; }
 .selfcheck-btn {
   flex: 1;

@@ -56,6 +56,7 @@ export default function VocabGame() {
   const [strokes, setStrokes] = useState<Stroke[]>([])
   const [phase, setPhase] = useState<Phase>('writing')
   const [read, setRead] = useState<string | null>(null)   // ce que le lecteur a lu
+  const [readError, setReadError] = useState('')          // pourquoi la lecture a échoué
   const [streak, setStreak] = useState(0)
   const [sessionOk, setSessionOk] = useState(0)
   const [sessionErr, setSessionErr] = useState(0)
@@ -83,6 +84,7 @@ export default function VocabGame() {
     setStrokes([])
     setPhase('writing')
     setRead(null)
+    setReadError('')
     setFeedback(null)
     setPeek(false)
   }
@@ -168,8 +170,9 @@ export default function VocabGame() {
       const hit = candidates.find(c => sameWord(c, word.word))
       setRead(candidates[0] ?? '')
       score(Boolean(hit))
-    } catch {
+    } catch (err) {
       // Moteur injoignable (hors ligne, panne) — l'enfant se corrige lui-même
+      setReadError((err as Error).message)
       setPhase('selfcheck')
       setFeedback(null)
     }
@@ -276,6 +279,7 @@ export default function VocabGame() {
         {phase === 'selfcheck' && (
           <div className="selfcheck">
             <p>Je n’ai pas pu lire ton mot. Compare avec le modèle :</p>
+            {readError && <p className="selfcheck-why">lecture indisponible — {readError}</p>}
             <div className="selfcheck-btns">
               <button className="selfcheck-btn ok" onClick={() => score(true)}>✅ C’est pareil</button>
               <button className="selfcheck-btn err" onClick={() => score(false)}>❌ Pas pareil</button>
