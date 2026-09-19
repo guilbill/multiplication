@@ -17,8 +17,7 @@ export type VerbTense = 'présent' | 'imparfait'
 export type VerbConjMode = VerbTense | 'all'
 export type HomophoneAnswer = 'on' | 'ont'
 export type HomophoneMode = HomophoneAnswer | 'all'
-export type VocabRound = 'syllabes' | 'lettres' | 'orthographe'
-export type VocabMode = VocabRound | 'all'
+export type VocabMode = 'tracer' | 'copier' | 'dictee'
 
 export interface Sentence {
   b: string       // text before the blank
@@ -40,30 +39,17 @@ export interface HomophoneSentence {
   ans: HomophoneAnswer
 }
 
-export interface VocabHole {
-  before: string    // start of the word, before the blank
-  hidden: string    // the letters to find
-  after: string     // rest of the word
-  options: string[] // 4 candidates, the right one included
-}
-
 export interface VocabWord {
-  article: string        // 'la ', 'un ', 'l’' or '' — already spaced
-  word: string
-  syllables: string[]    // written syllables, in order
-  holes: VocabHole[]     // tricky spots for the « lettres » round
-  misspellings: string[] // plausible wrong spellings, article included
+  article: string      // 'la ', 'un ', 'l’' or '' — already spaced
+  word: string         // what the child has to write
+  syllables: string[]  // written syllables, shown as a hint
 }
 
-export interface VocabQuestion {
-  idx: number            // index in VOCAB_WORDS
-  round: VocabRound
-  display: string        // 'la maitresse'
-  syllables: string[]    // ordered syllables
-  shuffled: string[]     // shuffled syllables (« syllabes » round)
-  hole?: VocabHole       // « lettres » round
-  choices: string[]      // « lettres » / « orthographe » rounds
-  answer: string
+/** One pen stroke, in canvas pixels: parallel x / y / timestamp arrays. */
+export interface Stroke {
+  x: number[]
+  y: number[]
+  t: number[]
 }
 
 export interface MultPart {
