@@ -35,6 +35,8 @@ body {
 }
 
 #app { width: 100%; max-width: 460px; }
+/* L'écran d'écriture prend toute la largeur utile de la tablette */
+#app.app-wide { max-width: min(96vw, 900px); }
 
 /* ── Page title ──────────────────────────────────────────── */
 .page-title {
@@ -607,15 +609,29 @@ input[type="text"]:focus { border-color: var(--bg-a); }
 .vocab-article { color: var(--muted); font-weight: 600; }
 .vocab-target.hidden { color: #ced4da; letter-spacing: 4px; }
 
+/* Rien ne défile ni ne se sélectionne sous la tranche de la main */
+.writing-card {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .canvas-box { position: relative; }
 .write-canvas {
   display: block;
   width: 100%;
+  /* Grande ardoise : ~la moitié de la hauteur d'écran, bornée */
+  height: clamp(220px, 44vh, 380px);
   background: #fffef9;
   border: 2px solid #e9ecef;
   border-radius: 14px;
   touch-action: none;          /* le stylet dessine, la page ne défile pas */
   cursor: crosshair;
+}
+/* Écran bas (tablette en paysage) : on garde l'ardoise dans l'écran */
+@media (max-height: 560px) {
+  .write-canvas { height: 200px; }
 }
 .write-canvas.disabled { cursor: default; background: #f8f9fa; }
 .read-badge {

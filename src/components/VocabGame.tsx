@@ -32,8 +32,6 @@ const INSTRUCTIONS: Record<VocabMode, string> = {
 // 'judged'  → corrigé · 'selfcheck' → le lecteur n'a pas répondu, l'enfant compare
 type Phase = 'writing' | 'checking' | 'judged' | 'selfcheck'
 
-const CANVAS_HEIGHT = 190
-
 export default function VocabGame() {
   const { state, dispatch, save } = useGame()
   const [levelUp, clearLevelUp] = useLevelUp(state.xp)
@@ -162,10 +160,11 @@ export default function VocabGame() {
     setPhase('checking')
     const box = canvasBoxRef.current
     try {
+      // Dimensions réelles de l'ardoise : le moteur cale son analyse dessus
       const candidates = await recognize(
         strokes,
         box?.clientWidth ?? 400,
-        CANVAS_HEIGHT,
+        box?.clientHeight ?? 220,
       )
       const hit = candidates.find(c => sameWord(c, word.word))
       setRead(candidates[0] ?? '')
@@ -177,6 +176,19 @@ export default function VocabGame() {
       setFeedback(null)
     }
   }
+
+  function toggleFullscreen() {
+    const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void }
+    const doc = document as Document & { webkitExitFullscreen?: () => void }
+    if (document.fullscreenElement) {
+      doc.exitFullscreen?.() ?? doc.webkitExitFullscreen?.()
+    } else {
+      el.requestFullscreen?.().catch(() => {}) ?? el.webkitRequestFullscreen?.()
+    }
+  }
+
+  const canFullscreen =
+    typeof document !== 'undefined' && !!document.documentElement.requestFullscreen
 
   const { mastered, total, pct } = vocabMasteryStats(progressRef.current)
   const showModel =
@@ -193,7 +205,7 @@ export default function VocabGame() {
         </button>
       </div>
 
-      <div className="card">
+      <div className="card writing-card">
         {/* Mode chips */}
         <div className="mode-row">
           {MODES.map(m => (
@@ -250,7 +262,6 @@ export default function VocabGame() {
             onChange={setStrokes}
             disabled={phase !== 'writing'}
             ghost={mode === 'tracer' ? word.word : undefined}
-            height={CANVAS_HEIGHT}
           />
           {read !== null && phase === 'judged' && (
             <div className="read-badge">J’ai lu : « {read || '…'} »</div>
@@ -263,6 +274,9 @@ export default function VocabGame() {
           <button className="write-tool" disabled={!writing || !strokes.length} onClick={clearInk}>🗑</button>
           {mode === 'dictee' && writing && (
             <button className="write-tool" onClick={() => setPeek(p => !p)} title="Voir le modèle">👀</button>
+          )}
+          {canFullscreen && (
+            <button className="write-tool" onClick={toggleFullscreen} title="Plein écran">⛶</button>
           )}
           {writing && (
             <button className="btn-check" disabled={!strokes.length} onClick={check}>

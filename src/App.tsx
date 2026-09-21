@@ -26,5 +26,8 @@ export default function App() {
     'boss-game':      <BossGame />,
   } as const
 
-  return <div id="app">{screens[state.screen]}</div>
+  // L'écriture au stylet a besoin de place : cet écran s'élargit
+  const wide = state.screen === 'vocab-game'
+
+  return <div id="app" className={wide ? 'app-wide' : undefined}>{screens[state.screen]}</div>
 }

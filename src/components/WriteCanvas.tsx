@@ -7,7 +7,6 @@ interface Props {
   disabled?: boolean
   /** Modèle tracé en filigrane, à repasser (mode « tracer »). */
   ghost?: string
-  height?: number
 }
 
 /** Position des lignes du cahier, en fraction de la hauteur. */
@@ -16,13 +15,18 @@ const XHEIGHT  = 0.44
 const BASELINE = 0.74
 const DESCENDER = 0.93
 
-export default function WriteCanvas({ strokes, onChange, disabled, ghost, height = 190 }: Props) {
+/** Au-delà de cette largeur de contact, ce n'est plus un doigt : c'est la main. */
+const PALM_SIZE = 35
+
+export default function WriteCanvas({ strokes, onChange, disabled, ghost }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const strokesRef = useRef(strokes)
   const currentRef = useRef<Stroke | null>(null)
   const startTimeRef = useRef(0)
-  // Dès qu'un stylet a servi, on ignore les doigts (rejet de la paume)
+  // Dès qu'un stylet a servi, on ignore tous les contacts de peau
   const penSeenRef = useRef(false)
+  // Un seul pointeur trace à la fois : les autres contacts sont ignorés
+  const activeIdRef = useRef<number | null>(null)
 
   useEffect(() => { strokesRef.current = strokes }, [strokes])
 
@@ -111,19 +115,50 @@ export default function WriteCanvas({ strokes, onChange, disabled, ghost, height
     return { x: e.clientX - r.left, y: e.clientY - r.top }
   }
 
+  /** Tranche de la main, poignet, doigt posé pendant qu'on écrit au stylet. */
+  function isPalm(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (e.pointerType !== 'touch') return false
+    return penSeenRef.current || e.width > PALM_SIZE || e.height > PALM_SIZE
+  }
+
   function handleDown(e: React.PointerEvent<HTMLCanvasElement>) {
     if (disabled) return
-    if (e.pointerType === 'pen') penSeenRef.current = true
-    else if (penSeenRef.current && e.pointerType === 'touch') return
-    e.currentTarget.setPointerCapture(e.pointerId)
+    if (isPalm(e)) { e.preventDefault(); return }
+
+    if (e.pointerType === 'pen') {
+      // Premier contact du stylet : tout ce qui a été tracé jusque-là vient
+      // de la peau (main posée avant d'écrire), on repart d'une ardoise nette.
+      if (!penSeenRef.current) {
+        penSeenRef.current = true
+        if (strokesRef.current.length) {
+          strokesRef.current = []
+          onChange([])
+        }
+      }
+      // Un trait commencé au doigt pendant que le stylet arrive est un parasite
+      if (activeIdRef.current !== null) {
+        currentRef.current = null
+        activeIdRef.current = null
+      }
+      draw()
+    } else if (activeIdRef.current !== null) {
+      return                                   // déjà un tracé en cours
+    }
+
+    e.preventDefault()
+    // Le pointeur peut déjà avoir disparu (stylet relevé très vite)
+    try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* sans capture */ }
+    activeIdRef.current = e.pointerId
     if (!strokesRef.current.length) startTimeRef.current = performance.now()
     const { x, y } = pointFrom(e)
     currentRef.current = { x: [x], y: [y], t: [Math.round(performance.now() - startTimeRef.current)] }
   }
 
   function handleMove(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (e.pointerId !== activeIdRef.current) return
     const cur = currentRef.current
     if (!cur || disabled) return
+    e.preventDefault()
     const { x, y } = pointFrom(e)
     const n = cur.x.length - 1
     // Trace le segment tout de suite : pas de re-rendu React par point
@@ -139,23 +174,30 @@ export default function WriteCanvas({ strokes, onChange, disabled, ghost, height
     cur.t.push(Math.round(performance.now() - startTimeRef.current))
   }
 
-  function handleUp() {
+  function handleUp(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (e.pointerId !== activeIdRef.current) return
+    activeIdRef.current = null
     const cur = currentRef.current
     currentRef.current = null
     if (!cur || disabled) return
     onChange([...strokesRef.current, cur])
   }
 
+  function handleCancel(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (e.pointerId !== activeIdRef.current) return
+    activeIdRef.current = null
+    currentRef.current = null
+    draw()                                     // le trait avorté disparaît
+  }
+
   return (
     <canvas
       ref={canvasRef}
       className={`write-canvas${disabled ? ' disabled' : ''}`}
-      style={{ height }}
       onPointerDown={handleDown}
       onPointerMove={handleMove}
       onPointerUp={handleUp}
-      onPointerCancel={handleUp}
-      onPointerLeave={handleUp}
+      onPointerCancel={handleCancel}
     />
   )
 }
