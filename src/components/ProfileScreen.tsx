@@ -24,8 +24,14 @@ export default function ProfileScreen() {
   }, [])
 
   async function selectProfile(name: string) {
-    const { multProgress, conjProgress, verbConjProgress, homophoneProgress, vocabProgress, xp } = await loadProgress(name)
-    dispatch({ type: 'LOAD_PLAYER', profile: name, multProgress, conjProgress, verbConjProgress, homophoneProgress, vocabProgress, xp })
+    const {
+      multProgress, conjProgress, verbConjProgress,
+      homophoneProgress, vocabProgress, gridProgress, circleProgress, xp,
+    } = await loadProgress(name)
+    dispatch({
+      type: 'LOAD_PLAYER', profile: name, multProgress, conjProgress, verbConjProgress,
+      homophoneProgress, vocabProgress, gridProgress, circleProgress, xp,
+    })
     dispatch({ type: 'NAVIGATE', screen: 'subject' })
   }
 

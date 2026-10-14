@@ -2,7 +2,12 @@ import { SENTENCES } from '../data/sentences'
 import { VERB_SENTENCES } from '../data/verbConjugations'
 import { HOMOPHONE_SENTENCES } from '../data/homophones'
 import { VOCAB_WORDS } from '../data/vocabulary'
-import type { MultMode, ConjMode, VerbConjMode, HomophoneMode, MultQuestion, Sentence } from '../types'
+import { GRID_SKILLS } from '../data/gridGame'
+import { CIRCLE_SKILLS } from '../data/circleGame'
+import type {
+  MultMode, ConjMode, VerbConjMode, HomophoneMode, MultQuestion, Sentence,
+  GridMode, GridSkill, CircleMode, CircleSkill,
+} from '../types'
 
 // ── Weights ────────────────────────────────────────────────
 export const WEIGHT_CORRECT = 0.72
@@ -217,6 +222,51 @@ export function pickVocabWord(progress: Record<number, number>, avoid?: number):
 export function vocabMasteryStats(progress: Record<number, number>) {
   const vals = Object.values(progress)
   if (!vals.length) return { mastered: 0, total: VOCAB_WORDS.length, pct: 0 }
+  const mastered = vals.filter(w => w <= MASTERED_THRESHOLD).length
+  return { mastered, total: vals.length, pct: Math.round((mastered / vals.length) * 100) }
+}
+
+// ── Se repérer dans l'espace ──────────────────────────────────
+export function initGridProgress(saved: Record<number, number>): Record<number, number> {
+  const p: Record<number, number> = {}
+  for (let i = 0; i < GRID_SKILLS.length; i++) p[i] = saved[i] ?? 1.0
+  return p
+}
+
+/** Choisit la compétence à travailler : les plus fragiles reviennent plus souvent. */
+export function pickGridSkill(progress: Record<number, number>, mode: GridMode): GridSkill {
+  const all = Object.entries(progress).map(([k, w]) => [GRID_SKILLS[+k], w] as [GridSkill, number])
+  const filtered = all.filter(([skill]) => {
+    if (mode === 'all') return true
+    if (mode === 'chemin') return skill === 'chemin' || skill === 'chemin-long'
+    return skill === mode
+  })
+  return weightedPick(filtered.length ? filtered : all)
+}
+
+export function gridMasteryStats(progress: Record<number, number>) {
+  const vals = Object.values(progress)
+  if (!vals.length) return { mastered: 0, total: GRID_SKILLS.length, pct: 0 }
+  const mastered = vals.filter(w => w <= MASTERED_THRESHOLD).length
+  return { mastered, total: vals.length, pct: Math.round((mastered / vals.length) * 100) }
+}
+
+// ── Le cercle ─────────────────────────────────────────────────
+export function initCircleProgress(saved: Record<number, number>): Record<number, number> {
+  const p: Record<number, number> = {}
+  for (let i = 0; i < CIRCLE_SKILLS.length; i++) p[i] = saved[i] ?? 1.0
+  return p
+}
+
+export function pickCircleSkill(progress: Record<number, number>, mode: CircleMode): CircleSkill {
+  const all = Object.entries(progress).map(([k, w]) => [CIRCLE_SKILLS[+k], w] as [CircleSkill, number])
+  const filtered = all.filter(([skill]) => mode === 'all' || skill === mode)
+  return weightedPick(filtered.length ? filtered : all)
+}
+
+export function circleMasteryStats(progress: Record<number, number>) {
+  const vals = Object.values(progress)
+  if (!vals.length) return { mastered: 0, total: CIRCLE_SKILLS.length, pct: 0 }
   const mastered = vals.filter(w => w <= MASTERED_THRESHOLD).length
   return { mastered, total: vals.length, pct: Math.round((mastered / vals.length) * 100) }
 }

@@ -1,5 +1,5 @@
 import { useGame } from '../context/GameContext'
-import { multMasteryStats, conjMasteryStats, verbConjMasteryStats, homophoneMasteryStats, vocabMasteryStats } from '../lib/spacedRepetition'
+import { multMasteryStats, conjMasteryStats, verbConjMasteryStats, homophoneMasteryStats, vocabMasteryStats, gridMasteryStats, circleMasteryStats } from '../lib/spacedRepetition'
 import { levelProgress, levelIcon } from '../lib/xp'
 
 export default function SubjectScreen() {
@@ -9,6 +9,8 @@ export default function SubjectScreen() {
   const { pct: verbConjPct } = verbConjMasteryStats(state.verbConjProgress)
   const { pct: homophonePct } = homophoneMasteryStats(state.homophoneProgress)
   const { pct: vocabPct } = vocabMasteryStats(state.vocabProgress)
+  const { pct: gridPct } = gridMasteryStats(state.gridProgress)
+  const { pct: circlePct } = circleMasteryStats(state.circleProgress)
   const { level, current, needed, pct: xpPct } = levelProgress(state.xp)
 
   function goHome() {
@@ -90,6 +92,30 @@ export default function SubjectScreen() {
             <span className="subject-sub">syllabes · lettres · orthographe</span>
           </span>
           <span className="subject-pct">⭐ {vocabPct}%</span>
+        </button>
+
+        <button
+          className="subject-card grid"
+          onClick={() => dispatch({ type: 'NAVIGATE', screen: 'grid-game' })}
+        >
+          <span className="subject-icon">🗺️</span>
+          <span className="subject-info">
+            <span className="subject-label">Se repérer dans l'espace</span>
+            <span className="subject-sub">quadrillage · chemins · flèches</span>
+          </span>
+          <span className="subject-pct">⭐ {gridPct}%</span>
+        </button>
+
+        <button
+          className="subject-card circle"
+          onClick={() => dispatch({ type: 'NAVIGATE', screen: 'circle-game' })}
+        >
+          <span className="subject-icon">⭕</span>
+          <span className="subject-info">
+            <span className="subject-label">Le cercle</span>
+            <span className="subject-sub">centre · rayon · diamètre · arc</span>
+          </span>
+          <span className="subject-pct">⭐ {circlePct}%</span>
         </button>
 
         <button

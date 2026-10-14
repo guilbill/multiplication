@@ -20,6 +20,8 @@ type Action =
       verbConjProgress: Record<number, number>
       homophoneProgress: Record<number, number>
       vocabProgress: Record<number, number>
+      gridProgress: Record<number, number>
+      circleProgress: Record<number, number>
       xp: number
     }
   | { type: 'NAVIGATE'; screen: Screen }
@@ -28,6 +30,8 @@ type Action =
   | { type: 'UPDATE_VERB_CONJ'; idx: number; weight: number }
   | { type: 'UPDATE_HOMOPHONE'; idx: number; weight: number }
   | { type: 'UPDATE_VOCAB'; idx: number; weight: number }
+  | { type: 'UPDATE_GRID'; idx: number; weight: number }
+  | { type: 'UPDATE_CIRCLE'; idx: number; weight: number }
   | { type: 'ADD_XP'; amount: number }
 
 // ── Reducer ────────────────────────────────────────────────
@@ -39,6 +43,8 @@ const initialState: GameState = {
   verbConjProgress: {},
   homophoneProgress: {},
   vocabProgress: {},
+  gridProgress: {},
+  circleProgress: {},
   xp: 0,
 }
 
@@ -53,6 +59,8 @@ function reducer(state: GameState, action: Action): GameState {
         verbConjProgress: action.verbConjProgress,
         homophoneProgress: action.homophoneProgress,
         vocabProgress: action.vocabProgress,
+        gridProgress: action.gridProgress,
+        circleProgress: action.circleProgress,
         xp: action.xp,
       }
     case 'NAVIGATE':
@@ -67,6 +75,10 @@ function reducer(state: GameState, action: Action): GameState {
       return { ...state, homophoneProgress: { ...state.homophoneProgress, [action.idx]: action.weight } }
     case 'UPDATE_VOCAB':
       return { ...state, vocabProgress: { ...state.vocabProgress, [action.idx]: action.weight } }
+    case 'UPDATE_GRID':
+      return { ...state, gridProgress: { ...state.gridProgress, [action.idx]: action.weight } }
+    case 'UPDATE_CIRCLE':
+      return { ...state, circleProgress: { ...state.circleProgress, [action.idx]: action.weight } }
     case 'ADD_XP':
       return { ...state, xp: state.xp + action.amount }
   }
@@ -90,8 +102,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
   useEffect(() => { stateRef.current = state }, [state])
 
   const save = useCallback(() => {
-    const { profile, multProgress, conjProgress, verbConjProgress, homophoneProgress, vocabProgress, xp } = stateRef.current
-    if (profile) saveProgress(profile, multProgress, conjProgress, verbConjProgress, homophoneProgress, vocabProgress, xp)
+    const {
+      profile, multProgress, conjProgress, verbConjProgress,
+      homophoneProgress, vocabProgress, gridProgress, circleProgress, xp,
+    } = stateRef.current
+    if (profile) {
+      saveProgress(
+        profile, multProgress, conjProgress, verbConjProgress,
+        homophoneProgress, vocabProgress, gridProgress, circleProgress, xp,
+      )
+    }
   }, [])
 
   // Auto-save on tab hide

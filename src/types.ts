@@ -8,6 +8,8 @@ export type Screen =
   | 'verb-conj-game'
   | 'homophone-game'
   | 'vocab-game'
+  | 'grid-game'
+  | 'circle-game'
   | 'boss-game'
 
 export type ConjEnding = 'é' | 'er' | 'ait' | 'aient'
@@ -72,5 +74,52 @@ export interface GameState {
   verbConjProgress: Record<number, number> // verb-conj sentence index → weight
   homophoneProgress: Record<number, number> // on/ont sentence index → weight
   vocabProgress: Record<number, number>     // vocabulary word index → weight
+  gridProgress: Record<number, number>      // grid skill index → weight
+  circleProgress: Record<number, number>    // circle skill index → weight
   xp: number
+}
+
+// ── Se repérer dans l'espace (quadrillage) ────────────────────
+// Les cases se nomment « ligne puis colonne » : la ligne est une lettre
+// (A…F), la colonne un chiffre (1…6) — B5 est ligne B, colonne 5.
+export type GridSkill = 'lire' | 'placer' | 'chemin' | 'chemin-long' | 'fleche'
+export type GridMode = 'all' | 'lire' | 'placer' | 'chemin' | 'fleche'
+export type Dir = '←' | '→' | '↑' | '↓'
+
+export interface Cell {
+  r: number   // ligne, 0 = A
+  c: number   // colonne, 0 = 1
+}
+
+export interface GridMark {
+  cell: Cell
+  icon: string
+}
+
+export interface GridQuestion {
+  skill: GridSkill
+  prompt: string
+  marks: GridMark[]          // formes posées sur le quadrillage
+  start?: Cell               // case de départ d'un chemin
+  arrows: Dir[]              // le chemin à suivre
+  hiddenArrow: number        // index de la flèche masquée, -1 sinon
+  path: Cell[]               // cases traversées, pour la correction
+  target: Cell               // la bonne case
+  answer: string             // 'B5' ou '→'
+  choices: string[]          // vide quand il faut toucher une case
+}
+
+// ── Le cercle ─────────────────────────────────────────────────
+export type CircleSkill = 'nommer' | 'segments' | 'calcul' | 'vrai-faux'
+export type CircleMode = 'all' | CircleSkill
+export type CirclePart = 'centre' | 'rayon' | 'diametre' | 'arc'
+
+export interface CircleQuestion {
+  skill: CircleSkill
+  prompt: string
+  highlight: CirclePart | null   // ce qui est tracé en rouge sur la figure
+  labels: boolean                // afficher O, A, B, C
+  choices: string[]
+  answer: string
+  explain?: string
 }

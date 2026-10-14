@@ -691,3 +691,98 @@ input[type="text"]:focus { border-color: var(--bg-a); }
 .selfcheck-btn.err { background: var(--err); }
 
 .tip-word { font-weight: 800; color: var(--text); font-size: .95rem; flex: 1; }
+
+/* ── Se repérer dans l'espace ────────────────────────────── */
+.subject-card.grid   { background: linear-gradient(135deg, #f59f00, #f76707); color: #fff; }
+.subject-card.circle { background: linear-gradient(135deg, #7048e8, #4c6ef5); color: #fff; }
+
+.grid-prompt {
+  text-align: center;
+  font-size: clamp(.95rem, 4vw, 1.15rem);
+  font-weight: 700;
+  color: var(--text);
+  margin: 10px 0 12px;
+  line-height: 1.4;
+}
+
+/* Le chemin de flèches à suivre */
+.arrow-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.arrow-step {
+  display: grid;
+  place-items: center;
+  min-width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #edf2ff;
+  color: var(--bg-a);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+.arrow-step.hidden-arrow { background: #fff3bf; color: #e67700; border: 2px dashed #f59f00; }
+.arrow-step.hidden-arrow.found { background: #d3f9d8; color: var(--ok); border-color: var(--ok); }
+
+/* Le quadrillage : une ligne d'en-tête puis une ligne par lettre */
+.grid-board {
+  display: grid;
+  grid-template-columns: 26px repeat(6, 1fr);
+  gap: 3px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.grid-head {
+  display: grid;
+  place-items: center;
+  font-size: .8rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+.grid-corner { }
+.grid-cell {
+  aspect-ratio: 1;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: clamp(.9rem, 4vw, 1.3rem);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  transition: background .15s, transform .1s;
+}
+.grid-cell.pickable { background: #fff; cursor: pointer; }
+.grid-cell.pickable:active { transform: scale(.92); background: #edf2ff; }
+.grid-cell.on-path { background: #e7f5ff; border-color: #a5d8ff; }
+.grid-cell.target  { background: #d3f9d8; border-color: var(--ok); animation: pop .3s; }
+.grid-cell.wrong   { background: #ffe3e3; border-color: var(--err); animation: shake .35s; }
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #74c0fc;
+}
+
+.grid-hint {
+  text-align: center;
+  font-size: .78rem;
+  color: var(--muted);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+/* Les quatre flèches : une seule rangée */
+.answer-grid.dirs { grid-template-columns: repeat(4, 1fr); }
+.answer-grid.dirs .ans-btn { font-size: 1.8rem; }
+
+/* ── Le cercle ───────────────────────────────────────────── */
+.circle-figure {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  margin: 4px auto 0;
+}
+.circle-labels text { font: 700 17px -apple-system, 'Segoe UI', sans-serif; }
